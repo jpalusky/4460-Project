@@ -130,6 +130,14 @@ d3.csv("LifeData.csv", function(error, dataset) {
         var newColor = {}; //Not quite sure why this works. Is this an object?
         newColor[d["Country Code"]] = colorScale(d[year + ""]); //Puts a single item array into the newColor variable?
         basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
+        
+        //Trying to stop the wierd some countries being green issue
+        //Does not work.
+        if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
+        {
+            newColor[d["Country Code"]] === "blue";
+        }
+            
     });
     
     
@@ -184,7 +192,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .text("Max @ " + Math.round(maxLife) + "y");
     
     //Create width, height, and padding for the line charts
-    var w = 800;
+    var w = 770;
     var h = 300;
     var padding = 50;
     
@@ -206,7 +214,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .append("svg")
             .attr("width", w)
             .attr("height", h)
-            .attr("class", "countryGraph1");
+            .attr("class", "countryGraph1")
+            .attr("style", "margin-left: -20;"); //Shift the line chart back (for looks).
  
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
         var dataIndex = -1; //Set to negative 1 so that if the country code is not found, it does not change
