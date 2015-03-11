@@ -37,10 +37,10 @@
     
     <!-- Creating a div for the cholopleth to be put in -->
     <div id="basic_choropleth" style="position: relative; width: 700px; height: 400px;"></div>
-    
+
     
 <!-- D3 and Javascript portion -->
-<script>
+<script>    
 
 //Input the csv, calling it "dataset"
 d3.csv("LifeData.csv", function(error, dataset) { 
@@ -62,6 +62,9 @@ d3.csv("LifeData.csv", function(error, dataset) {
               });
         },
     });
+    
+
+    
 
     //Make the dark canvas BG
     d3.selectAll(".datamap").attr("style", "background-color: rgb(53, 53, 53); border-radius: 4px;");
