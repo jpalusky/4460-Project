@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>D3 Datamaps Test 2</title>
+    
+    <!-- Slider CSS -->
+    <!--<link rel="stylesheet" href="iThing.css" type="text/css" />-->
+    
+    <style>
+        /*CSS STYLES*/
+        
+        /* Path and line styling to make the axis look nicer */
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges; /* This is an SVG property that makes sure there is no blur on lines */
+        }
+        
+        .axis text {
+            font-family: sans-serif;
+            font-size: 11px;
+        }
+        
+        text {
+            font-family: Century Gothic, sans-serif;
+        }
+    </style>
+    
+    <!-- Slider stuff -->
+    <link rel="stylesheet" id="themeCSS" href="iThing.css"> 
+	<link rel="stylesheet" href="style.css">
+	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+	<script src="jquery.mousewheel.min.js"></script>
+	<script src="../jQAllRangeSliders-min.js"></script>
+    
+</head>
+
+<body>
+    <!-- D3, topojson, and datamaps -->
+    <script type="text/javascript" src="d3.v3.js"></script>
+    <script type="text/javascript" src="topojson.js"></script>
+    <script src="datamaps.world.min.js"></script>
+    
+    <!-- Div for cholopleth map -->
+    <div id="basic_choropleth" style="position: relative; width: 700px; height: 400px;"></div>
+    
+    <!-- Slider -->
+    <div id="slider" style="width: 700px"></div>
+    
+    
+<!-- D3 and Javascript portion -->
+<script>
+//Input the csv, calling it "dataset"
+d3.csv("LifeData.csv", function(error, dataset) {
+    
+    //To do: calculate first and last year fields with javascript or d3
+    var minDatasetYear = 1960;
+    var maxDatasetYear = 2012;
+    
+    //Create the slider
+    $("#slider").rangeSlider({
+        bounds:{min: minDatasetYear, max: maxDatasetYear},
+        range: {min: 5, max: maxDatasetYear - minDatasetYear},
+        defaultValues:{min: minDatasetYear, max: maxDatasetYear}
+    });
+    
+    //Change variables on slider change
+    $("#slider").bind("valuesChanged", function(e, data){
+        minDatasetYear = Math.round(data.values.min);
+        maxDatasetYear = Math.round(data.values.max);
+        console.log("Values just changed. min: " + minDatasetYear + " max: " + maxDatasetYear);
+    });
+
+    
+    //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
+    var basic_choropleth = new Datamap({
+        element: document.getElementById("basic_choropleth"),
+        geographyConfig: {
+            highlightBorderColor: '#FFFC99',
+            popupTemplate: function(geography) {
+                    //Details on demand settings
+                    return '<div class="hoverinfo">' + geography.properties.name + ', Year: ' +  year + ', Life: ' + dataset[0][year + ""];
+            },
+            highlightBorderWidth: 2
+          },
+        done: function(datamap) { //On country click
+            datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+                countryClick(geography.id, true); //Boolean input "true" removes old graph
+              });
+        },
+    });
+
+    //Make the dark canvas BG
+    d3.selectAll(".datamap").attr("style", "background-color: rgb(53, 53, 53); border-radius: 4px;");
+    
+    //Initial variables for min and max of the dataSet for choropleth colors
+    var minLife = 100;
+    var maxLife = 0;
+    var year = 2000;
+    
+    dataset.forEach(function(d) {
+        for(var j = 1960; j <= 2014; j++)
+        {
+            //Plus sign turns data values at years into numbers.
+            d[j + ""] = +d[j + ""]; //Turn year to string so that d3 understands it
+        }
+    });
+    
+    //Find min and max from the dataset
+    dataset.forEach(function(d) {
+        for(var j = year; j < 2012; j++) {
+        
+            if(d[j + ""] > 0 && d[j + ""] < minLife) {
+                minLife = d[j + ""];
+            }
+            
+            if(d[j + ""] > maxLife) {
+                maxLife = d[j + ""];
+            }
+        }
+    });
+    
+    
+    //Create the scale for the choropleth
+    var colorScale = d3.scale.linear()
+        .domain([minLife, maxLife])
+        .range(["red", "white"]);
+    
+    
+    //Change map colors to match scaled colors based on data values
+    dataset.forEach(function(d){
+        var newColor = {}; //Not quite sure why this works. Is this an object?
+        newColor[d["Country Code"]] = colorScale(d[year + ""]); //Puts a single item array into the newColor variable?
+        basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
+    });
+    
+    
+    //Create linear gradient below map (this is a bit of a process)
+    var gradient = d3.select("#basic_choropleth").selectAll("svg")
+            .append("svg:g") //Put the gradient in a g element inside of the svg
+            .attr("width", "400")
+            .attr("height", "50")
+            .attr("transform", "translate(200, 350)"); //Put the gradient at the bottom of the map
+    
+    //Define the gradient with a defs element
+    var defs = gradient.append("defs");
+    var linearGrad = defs.append("linearGradient")
+        .attr({
+            id: "grad1",
+            x1: "0%", 
+            y1: "0%",
+            x2: "100%",
+            y2: "0%",
+        });
+    linearGrad.append("stop") //Tell where to start the gardient (min)
+            .attr({
+                offset: "0%",
+                style: "stop-color:" + colorScale(minLife) + "; stop-opacity:1",
+            });
+    linearGrad.append("stop") //Tell where to end the gradient (max)
+            .attr({
+                offset: "100%",
+                style: "stop-color:" + colorScale(maxLife)+ ";stop-opacity:1",
+            });
+    var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
+        .attr({
+                width: 300,
+                height: 30,
+                rx: 2,
+                ry: 2,
+                style: "fill:url(#grad1)" //Fill rectangle with the gradient created
+            });
+    gradient.append("text") //Append the text telling the min life
+        .attr({
+            y: 20,
+            x: 5,
+            fill: "white",
+        })
+        .text("Min @ " + Math.round(minLife) + "y");
+    gradient.append("text") //Append the text telling the max life
+        .attr({
+            y: 20,
+            x: 200,
+            fill: "black",
+        })
+        .text("Max @ " + Math.round(maxLife) + "y");
+    
+    //Create width, height, and padding for the line charts
+    var w = 800;
+    var h = 300;
+    var padding = 50;
+    
+    //Line chart year scaling
+    var xScale = d3.scale.linear()
+        .domain([1960, 2014])
+        .range([padding, w - padding]);
+    
+    
+    //Function that runs when you click a country
+    var countryClick = function(countryIn, newCountryBoolean) {
+        
+        if(newCountryBoolean == true) {
+            d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
+        }
+             
+        //Create a new canvas svg element, with class of countryGraph1
+        var canvas = d3.select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h)
+            .attr("class", "countryGraph1");
+ 
+        //Kind of mudane way of finding which data index is currently selected (based on the country name)
+        var dataIndex = -1; //Set to negative 1 so that if the country code is not found, it does not change
+        dataset.forEach(function(d, i) {
+            if(d["Country Code"] == countryIn){
+                dataIndex = i;
+            }
+        });
+        
+        if(dataIndex === -1) { //
+            canvas.append("text")
+                .attr("y", h/2)
+                .attr("x", w/2 - 130)
+                .text("Data Not Available")
+                .attr("fill", "black");
+                return;
+        }
+        
+        //Find min value from the dataset
+        var minValue = 100;
+        for(var j = 1960; j < 2012; j++) {
+        
+            if(dataset[dataIndex][j + ""] > 0 && dataset[dataIndex][j + ""] < minValue)
+            {
+                minValue = dataset[dataIndex][j + ""]; //If smaller value than current, select the data item at the clicked index
+            }
+        }
+        
+        //Set the yScale based on the datapoints
+        var yScale;
+        if( minValue < 100 && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
+            yScale = d3.scale.linear() 
+            .domain([minValue - 1, d3.max(d3.values(dataset[dataIndex]))])
+            .range([h - padding, padding]); //Range is the size of the chart
+        }
+        else {
+            yScale = d3.scale.linear() //Default y scale if no datapoints, or ugly data
+            .domain([0, 100])
+            .range([h - padding, padding]);
+        }
+
+        //xAxis using year xScale
+        var xAxis = d3.svg.axis()
+            .scale(xScale)
+            .orient("bottom")
+            //.ticks(5) //Creat less ticks if needed
+            .tickFormat(d3.format("d")); //decimal ticks (rounded) 
+        
+        //Append a g element containing xAxis
+        canvas.append("g")
+            .attr("class", "axis") //Assignign an axis class to the xAxis.
+            .attr("transform", "translate(0," + (h - padding) + ")")
+            .call(xAxis); //Took our "g" group elements and put the xAxis on them. Note that we could put the xAxis code in.
+
+
+        //yAxis
+        var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient("left"); //IMPORTANT: left orientation for the left axis
+
+        //Append yAxis
+        canvas.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(" + padding + ",0)")
+        .call(yAxis);
+
+
+
+        //Calculate the slope from the first and last years with data
+        var startYear; //Start and end if no value at 1960
+        var endYear;
+        var slope;
+        
+        for(var j = 1960; j < 2012; j++) { //Find a start year if no value in 1960
+            if(dataset[dataIndex][j + ""] > 0) {
+                startYear = j;
+                break;
+            }
+        }
+        for(var j = 2012; j >= 1960; j--) { //Find end year if no value in 2011
+            if(dataset[dataIndex][j + ""] > 0) {
+                endYear = j;
+                break;
+            }
+        }
+        slope = (dataset[dataIndex][startYear + ""] - dataset[dataIndex][endYear + ""])/(startYear - endYear);   
+
+
+        //Circle fill color
+        var circleFill;
+        
+        //This changes slope text (or color, if you want) if the slope is real or not
+        if (!isNaN(slope) && slope !== 0) {
+            circleFill = "blue";
+            canvas.append("text")
+                .attr("y", 20)
+                .attr("x", 20)
+                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + slope.toFixed(2))
+                .attr("fill", "black");
+        }
+        else {
+            circleFill = "blue";
+            canvas.append("text")
+                .attr("fill", "black")
+                .attr("y", 20)
+                .attr("x", 20)
+                .text(dataset[dataIndex]["Country Name"] + ", Slope = N/A")
+                .attr("fill", "black");
+        }
+
+
+
+        //Draw circles and lines for each year
+        for(var j = 1960; j <= 2012; j++) {
+
+            if(dataset[dataIndex][j + ""] <= 0)
+            {
+                continue; //Skips iteration. Don't draw a year if there is no data
+            }
+
+            //Draws circles in correct places (x and y)
+            var circles = canvas.append("circle")
+                .attr("cx", xScale(j + ""))
+                .attr("cy", yScale(dataset[dataIndex][j + ""]))
+                .attr("r", 3)
+                .attr("fill", circleFill);
+            
+            //Draws first lines point starting at current circle
+            var lines = canvas.append("line")
+                .attr({
+                        x1: xScale(j + ""),
+                        y1: yScale(dataset[dataIndex][j + ""]),
+                        stroke: circleFill
+                      });
+            
+            //Draw second line point to next non-zero point
+            if(j < endYear) { //If you actually should draw a line
+                if(dataset[dataIndex][(j+1) + ""] > 0) {
+                    lines.attr({
+                        x2: xScale((j+1) + ""),
+                        y2: yScale(dataset[dataIndex][(j+1) + ""])
+                    });
+                }
+                else { //If no data for next point
+                    for(var k = j+2; k < 2012; k++) { //Start at point two up from current
+                        if(dataset[dataIndex][k + ""] > 0) { //If point exists
+                            lines.attr({
+                                x2: xScale(k + ""),
+                                y2: yScale(dataset[dataIndex][k + ""])
+                            });
+                            break;
+                        }
+                        if(k >= endYear) { //If no real values left to draw to
+                            lines.attr({
+                                x2: xScale(j + ""),
+                                y2: yScale(dataset[dataIndex][j + ""])
+                            });
+                            break;
+                        }
+                    } //for
+                } //else  
+            }
+            else {
+                lines.attr({
+                    x2: xScale(j + ""),
+                    y2: yScale(dataset[dataIndex][j + ""])
+                });
+            }
+        } //Drawing for
+    } //countryClick()
+
+}); //.csv
+    
+
+</script>
+    
+    
+    <script>
+        /*
+        $("#slider").rangeSlider();
+        $("#slider").rangeSlider({range: {min: 5}});
+        $("#slider").rangeSlider({bounds:{min: 1960, max: 2012}});
+        */
+    </script>
+    
+</body>
