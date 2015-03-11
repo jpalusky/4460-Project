@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
-    <title>D3 Datamaps Test 1</title>
+    <title>D3 Datamaps Test 2</title>
     
+    <!-- Slider CSS -->
+    <!--<link rel="stylesheet" href="iThing.css" type="text/css" />-->
     
     <style>
         /*CSS STYLES*/
@@ -25,25 +27,52 @@
         }
     </style>
     
+    <!-- Slider stuff -->
+    <link rel="stylesheet" id="themeCSS" href="iThing.css"> 
+	<link rel="stylesheet" href="style.css">
+	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+	<script src="jquery.mousewheel.min.js"></script>
+	<script src="../jQAllRangeSliders-min.js"></script>
+    
 </head>
 
 <body>
-    <!-- Importing d3, topojson, and datamaps -->
+    <!-- D3, topojson, and datamaps -->
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="topojson.js"></script>
     <script src="datamaps.world.min.js"></script>
     
-    <form></form>
-    
-    <!-- Creating a div for the cholopleth to be put in -->
+    <!-- Div for cholopleth map -->
     <div id="basic_choropleth" style="position: relative; width: 700px; height: 400px;"></div>
-
+    
+    <!-- Slider -->
+    <div id="slider" style="width: 700px"></div>
+    
     
 <!-- D3 and Javascript portion -->
-<script>    
-
+<script>
 //Input the csv, calling it "dataset"
-d3.csv("LifeData.csv", function(error, dataset) { 
+d3.csv("LifeData.csv", function(error, dataset) {
+    
+    //To do: calculate first and last year fields with javascript or d3
+    var minDatasetYear = 1960;
+    var maxDatasetYear = 2012;
+    
+    //Create the slider
+    $("#slider").rangeSlider({
+        bounds:{min: minDatasetYear, max: maxDatasetYear},
+        range: {min: 5, max: maxDatasetYear - minDatasetYear},
+        defaultValues:{min: minDatasetYear, max: maxDatasetYear}
+    });
+    
+    //Change variables on slider change
+    $("#slider").bind("valuesChanged", function(e, data){
+        minDatasetYear = Math.round(data.values.min);
+        maxDatasetYear = Math.round(data.values.max);
+        console.log("Values just changed. min: " + minDatasetYear + " max: " + maxDatasetYear);
+    });
+
     
     //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
     var basic_choropleth = new Datamap({
@@ -62,9 +91,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
               });
         },
     });
-    
-
-    
 
     //Make the dark canvas BG
     d3.selectAll(".datamap").attr("style", "background-color: rgb(53, 53, 53); border-radius: 4px;");
@@ -86,13 +112,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
     dataset.forEach(function(d) {
         for(var j = year; j < 2012; j++) {
         
-            if(d[j + ""] > 0 && d[j + ""] < minLife)
-            {
+            if(d[j + ""] > 0 && d[j + ""] < minLife) {
                 minLife = d[j + ""];
             }
             
-            if(d[j + ""] > maxLife)
-            {
+            if(d[j + ""] > maxLife) {
                 maxLife = d[j + ""];
             }
         }
@@ -163,9 +187,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
         })
         .text("Max @ " + Math.round(maxLife) + "y");
     
-    
-    
-    
     //Create width, height, and padding for the line charts
     var w = 800;
     var h = 300;
@@ -183,15 +204,30 @@ d3.csv("LifeData.csv", function(error, dataset) {
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
         }
+             
+        //Create a new canvas svg element, with class of countryGraph1
+        var canvas = d3.select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h)
+            .attr("class", "countryGraph1");
  
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
-        var dataIndex = 0;
+        var dataIndex = -1; //Set to negative 1 so that if the country code is not found, it does not change
         dataset.forEach(function(d, i) {
             if(d["Country Code"] == countryIn){
                 dataIndex = i;
             }
         });
         
+        if(dataIndex === -1) { //
+            canvas.append("text")
+                .attr("y", h/2)
+                .attr("x", w/2 - 130)
+                .text("Data Not Available")
+                .attr("fill", "black");
+                return;
+        }
         
         //Find min value from the dataset
         var minValue = 100;
@@ -215,14 +251,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .domain([0, 100])
             .range([h - padding, padding]);
         }
-
-        //Create a canvas svg element, with class of countryGraph1
-        var canvas = d3.select("body")
-            .append("svg")
-            .attr("width", w)
-            .attr("height", h)
-            .attr("class", "countryGraph1");
-
 
         //xAxis using year xScale
         var xAxis = d3.svg.axis()
@@ -250,29 +278,25 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .call(yAxis);
 
 
-        //Calculate slope from 1960 to 2011. THIS SHOULD BE IMPROVED.
-        //It would be better to calculate slope from minimum existing value to max existing value.
+
+        //Calculate the slope from the first and last years with data
         var startYear; //Start and end if no value at 1960
         var endYear;
         var slope;
-        if(dataset[dataIndex]["1960"] > 0) {
-            slope = (dataset[dataIndex]["1960"] - dataset[dataIndex]["2011"])/(1960 - 2011); //Slope is from 1960 to 2011
-        }
-        else {
-            for(var j = 1960; j < 2012; j++) { //Find a start year if no value in 1960
-                if(dataset[dataIndex][j + ""] > 0) {
-                    startYear = j;
-                    break;
-                }
+        
+        for(var j = 1960; j < 2012; j++) { //Find a start year if no value in 1960
+            if(dataset[dataIndex][j + ""] > 0) {
+                startYear = j;
+                break;
             }
-            for(var j = 2011; j >= 1960; j--) { //Find end year if no value in 2011
-                if(dataset[dataIndex][j + ""] > 0) {
-                    endYear = j;
-                    break;
-                }
-            }
-            slope = (dataset[dataIndex][startYear + ""] - dataset[dataIndex][endYear + ""])/(startYear - endYear);   
         }
+        for(var j = 2012; j >= 1960; j--) { //Find end year if no value in 2011
+            if(dataset[dataIndex][j + ""] > 0) {
+                endYear = j;
+                break;
+            }
+        }
+        slope = (dataset[dataIndex][startYear + ""] - dataset[dataIndex][endYear + ""])/(startYear - endYear);   
 
 
         //Circle fill color
@@ -300,7 +324,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
 
 
         //Draw circles and lines for each year
-        for(var j = 1960; j < 2012; j++) {
+        for(var j = 1960; j <= 2012; j++) {
 
             if(dataset[dataIndex][j + ""] <= 0)
             {
@@ -323,35 +347,53 @@ d3.csv("LifeData.csv", function(error, dataset) {
                       });
             
             //Draw second line point to next non-zero point
-            if(dataset[dataIndex][(j+1) + ""] > 0) {
+            if(j < endYear) { //If you actually should draw a line
+                if(dataset[dataIndex][(j+1) + ""] > 0) {
+                    lines.attr({
+                        x2: xScale((j+1) + ""),
+                        y2: yScale(dataset[dataIndex][(j+1) + ""])
+                    });
+                }
+                else { //If no data for next point
+                    for(var k = j+2; k < 2012; k++) { //Start at point two up from current
+                        if(dataset[dataIndex][k + ""] > 0) { //If point exists
+                            lines.attr({
+                                x2: xScale(k + ""),
+                                y2: yScale(dataset[dataIndex][k + ""])
+                            });
+                            break;
+                        }
+                        if(k >= endYear) { //If no real values left to draw to
+                            lines.attr({
+                                x2: xScale(j + ""),
+                                y2: yScale(dataset[dataIndex][j + ""])
+                            });
+                            break;
+                        }
+                    } //for
+                } //else  
+            }
+            else {
                 lines.attr({
-                    x2: xScale((j+1) + ""),
-                    y2: yScale(dataset[dataIndex][(j+1) + ""])
+                    x2: xScale(j + ""),
+                    y2: yScale(dataset[dataIndex][j + ""])
                 });
             }
-            else { //If no data for next point
-                for(var k = j+2; k < 2012; k++) { //Start at point two up from current
-                    if(dataset[dataIndex][k + ""] > 0) { //If point exists
-                        lines.attr({
-                            x2: xScale(k + ""),
-                            y2: yScale(dataset[dataIndex][k + ""])
-                        });
-                        break;
-                    }
-                    if(k >= 2011) { //If no real values left to draw to
-                        lines.attr({
-                            x2: xScale(j + ""),
-                            y2: yScale(dataset[dataIndex][j + ""])
-                        });
-                        break;
-                    }
-                } //for
-            } //else
         } //Drawing for
     } //countryClick()
 
 }); //.csv
+    
 
 </script>
+    
+    
+    <script>
+        /*
+        $("#slider").rangeSlider();
+        $("#slider").rangeSlider({range: {min: 5}});
+        $("#slider").rangeSlider({bounds:{min: 1960, max: 2012}});
+        */
+    </script>
     
 </body>
