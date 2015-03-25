@@ -6,6 +6,11 @@
         /*CSS STYLES*/
         
         /* Path and line styling to make the axis look nicer */
+        .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
         .axis path,
         .axis line {
             fill: none;
@@ -55,6 +60,17 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var minDatasetYear = 1960;
     var maxDatasetYear = 2012;
     
+    var xScale = d3.scale.linear();
+    var yScale = d3.scale.linear();
+    var xAxis = d3.svg.axis();
+    var yAxis = d3.svg.axis();
+
+
+    var line = d3.svg.line()
+                .defined(function(d,i) { return d['value'] > 0; })
+                .x(function(d, i) { return xScale(+d.key); })
+                .y(function(d, i) { return yScale(+d['value']); });
+
     //Create the slider
     $("#slider").rangeSlider({
         bounds:{min: minDatasetYear, max: maxDatasetYear},
@@ -66,7 +82,28 @@ d3.csv("LifeData.csv", function(error, dataset) {
     $("#slider").bind("valuesChanged", function(e, data){
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
-        console.log("Values just changed. min: " + minDatasetYear + " max: " + maxDatasetYear);
+        // main.select('.main.axis.month').call(x1MonthAxis);
+        xScale.domain([minDatasetYear, maxDatasetYear]);
+
+        
+        d3.csv("LifeData.csv", function(error, dataset) {
+
+            var entries = d3.entries(dataset[dataIndex]);
+                entries = entries.filter(function(element){
+                    return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
+            });
+
+
+            var newTransition = d3.select("body").transition();
+            newTransition.select("#xAxis").call(xAxis);
+            newTransition.select("#chartLine")
+                .attr("d", line(entries));
+            // newTransition.selectAll(".dot")
+                // .filter(function(d){ return d.key < 2000;};)
+                // .attr("cx", line.x())
+                // .attr("cy", line.y());
+            // console.log("Values just changed. min: " + minDatasetYear + " max: " + maxDatasetYear);
+        });
     });
 
     
@@ -105,18 +142,18 @@ d3.csv("LifeData.csv", function(error, dataset) {
     });
     
     //Find min and max from the dataset
-    dataset.forEach(function(d) {
-        for(var j = year; j < 2012; j++) {
+    // dataset.forEach(function(d) {
+    //     for(var j = year; j < 2012; j++) {
         
-            if(d[j + ""] > 0 && d[j + ""] < minLife) {
-                minLife = d[j + ""];
-            }
+    //         if(d[j + ""] > 0 && d[j + ""] < minLife) {
+    //             minLife = d[j + ""];
+    //         }
             
-            if(d[j + ""] > maxLife) {
-                maxLife = d[j + ""];
-            }
-        }
-    });
+    //         if(d[j + ""] > maxLife) {
+    //             maxLife = d[j + ""];
+    //         }
+    //     }
+    // });
     
     
     //Create the scale for the choropleth
@@ -197,7 +234,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var padding = 50;
     
     //Line chart year scaling
-    var xScale = d3.scale.linear()
+    xScale = d3.scale.linear()
         .domain([1960, 2014])
         .range([padding, w - padding]);
     
@@ -218,7 +255,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .attr("style", "margin-left: -20;"); //Shift the line chart back (for looks).
  
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
-        var dataIndex = -1; //Set to negative 1 so that if the country code is not found, it does not change
         dataset.forEach(function(d, i) {
             if(d["Country Code"] == countryIn){
                 dataIndex = i;
@@ -245,7 +281,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
         }
         
         //Set the yScale based on the datapoints
-        var yScale;
         if( minValue < 100 && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
             yScale = d3.scale.linear() 
             .domain([minValue - 1, d3.max(d3.values(dataset[dataIndex]))])
@@ -258,7 +293,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         }
 
         //xAxis using year xScale
-        var xAxis = d3.svg.axis()
+        xAxis = d3.svg.axis()
             .scale(xScale)
             .orient("bottom")
             //.ticks(5) //Creat less ticks if needed
@@ -267,6 +302,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         //Append a g element containing xAxis
         canvas.append("g")
             .attr("class", "axis") //Assignign an axis class to the xAxis.
+            .attr("id", "xAxis")
             .attr("transform", "translate(0," + (h - padding) + ")")
             .call(xAxis); //Took our "g" group elements and put the xAxis on them. Note that we could put the xAxis code in.
 
@@ -279,6 +315,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         //Append yAxis
         canvas.append("g")
         .attr("class", "axis")
+        .attr("id", "yAxis")
         .attr("transform", "translate(" + padding + ",0)")
         .call(yAxis);
 
@@ -326,65 +363,88 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("fill", "black");
         }
 
+        // console.log(dataset[0].keys());
+
+        var entries = d3.entries(dataset[dataIndex]);
+        entries = entries.filter(function(element){
+            return(!isNaN(+element.key) && 1960 <= +element.key && +element.key <= 2012);
+        });
+
+        // console.log(entries);
+
+        canvas.append("path")
+                .datum(entries)
+                .attr("class","line")
+                .attr("id","chartLine")
+                .attr("d", line);
+
+        // var circles = canvas.selectAll(".dot")
+        //         .data(entries)
+        //         .enter().append("circle")
+        //         .attr("class", "dot")
+        //         .attr("fill", "steelblue")
+        //         .attr("cx", line.x())
+        //         .attr("cy", line.y())
+        //         .attr("r", 3.5);
 
 
         //Draw circles and lines for each year
-        for(var j = 1960; j <= 2012; j++) {
+        // for(var j = 1960; j <= 2012; j++) {
 
-            if(dataset[dataIndex][j + ""] <= 0)
-            {
-                continue; //Skips iteration. Don't draw a year if there is no data
-            }
+        //     if(dataset[dataIndex][j + ""] <= 0)
+        //     {
+        //         continue; //Skips iteration. Don't draw a year if there is no data
+        //     }
 
             //Draws circles in correct places (x and y)
-            var circles = canvas.append("circle")
-                .attr("cx", xScale(j + ""))
-                .attr("cy", yScale(dataset[dataIndex][j + ""]))
-                .attr("r", 3)
-                .attr("fill", circleFill);
+            // var circles = canvas.append("circle")
+            //     .attr("cx", xScale(j + ""))
+            //     .attr("cy", yScale(dataset[dataIndex][j + ""]))
+            //     .attr("r", 3)
+            //     .attr("fill", circleFill);
             
             //Draws first lines point starting at current circle
-            var lines = canvas.append("line")
-                .attr({
-                        x1: xScale(j + ""),
-                        y1: yScale(dataset[dataIndex][j + ""]),
-                        stroke: circleFill
-                      });
+            // var lines = canvas.append("line")
+            //     .attr({
+            //             x1: xScale(j + ""),
+            //             y1: yScale(dataset[dataIndex][j + ""]),
+            //             stroke: circleFill
+            //           });
             
             //Draw second line point to next non-zero point
-            if(j < endYear) { //If you actually should draw a line
-                if(dataset[dataIndex][(j+1) + ""] > 0) {
-                    lines.attr({
-                        x2: xScale((j+1) + ""),
-                        y2: yScale(dataset[dataIndex][(j+1) + ""])
-                    });
-                }
-                else { //If no data for next point
-                    for(var k = j+2; k < 2012; k++) { //Start at point two up from current
-                        if(dataset[dataIndex][k + ""] > 0) { //If point exists
-                            lines.attr({
-                                x2: xScale(k + ""),
-                                y2: yScale(dataset[dataIndex][k + ""])
-                            });
-                            break;
-                        }
-                        if(k >= endYear) { //If no real values left to draw to
-                            lines.attr({
-                                x2: xScale(j + ""),
-                                y2: yScale(dataset[dataIndex][j + ""])
-                            });
-                            break;
-                        }
-                    } //for
-                } //else  
-            }
-            else {
-                lines.attr({
-                    x2: xScale(j + ""),
-                    y2: yScale(dataset[dataIndex][j + ""])
-                });
-            }
-        } //Drawing for
+            // if(j < endYear) { //If you actually should draw a line
+            //     if(dataset[dataIndex][(j+1) + ""] > 0) {
+            //         lines.attr({
+            //             x2: xScale((j+1) + ""),
+            //             y2: yScale(dataset[dataIndex][(j+1) + ""])
+            //         });
+            //     }
+            //     else { //If no data for next point
+            //         for(var k = j+2; k < 2012; k++) { //Start at point two up from current
+            //             if(dataset[dataIndex][k + ""] > 0) { //If point exists
+            //                 lines.attr({
+            //                     x2: xScale(k + ""),
+            //                     y2: yScale(dataset[dataIndex][k + ""])
+            //                 });
+            //                 break;
+            //             }
+            //             if(k >= endYear) { //If no real values left to draw to
+            //                 lines.attr({
+            //                     x2: xScale(j + ""),
+            //                     y2: yScale(dataset[dataIndex][j + ""])
+            //                 });
+            //                 break;
+            //             }
+            //         } //for
+            //     } //else  
+            // }
+            // else {
+            //     lines.attr({
+            //         x2: xScale(j + ""),
+            //         y2: yScale(dataset[dataIndex][j + ""])
+            //     });
+            // }
+        // } //Drawing for
     } //countryClick()
 
 }); //.csv
