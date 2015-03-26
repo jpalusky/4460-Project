@@ -45,10 +45,11 @@
     <script src="datamaps.world.min.js"></script>
     
     <!-- Div for cholopleth map -->
-    <div id="basic_choropleth" style="position: relative; width: 700px; height: 400px;"></div>
+    <div id="basic_choropleth" style="position: relative; width: 1400px; height:600px; margin: 0 auto;"></div>
+
     
     <!-- Slider -->
-    <div id="slider" style="width: 700px"></div>
+    <div id="slider" style="width: 1400px; margin: 0 auto;"></div>
     
     
 <!-- D3 and Javascript portion -->
@@ -112,11 +113,12 @@ d3.csv("LifeData.csv", function(error, dataset) {
         element: document.getElementById("basic_choropleth"),
         geographyConfig: {
             highlightBorderColor: '#FFFC99',
+            borderColor: '#606060',
             popupTemplate: function(geography) {
                     //Details on demand settings
                     return '<div class="hoverinfo">' + geography.properties.name + ', Year: ' +  year + ', Life: ' + dataset[0][year + ""];
             },
-            highlightBorderWidth: 2
+            highlightBorderWidth: 0
           },
         done: function(datamap) { //On country click
             datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
@@ -125,8 +127,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
         },
     });
 
+    /*
     //Make the dark canvas BG
-    d3.selectAll(".datamap").attr("style", "background-color: rgb(53, 53, 53); border-radius: 4px;");
+    d3.selectAll(".datamap").attr("style", "background-color: rgb(255, 255, 255); border-radius: 4px;");
+    */
     
     //Initial variables for min and max of the dataSet for choropleth colors
     var minLife = 100;
@@ -142,24 +146,24 @@ d3.csv("LifeData.csv", function(error, dataset) {
     });
     
     //Find min and max from the dataset
-    // dataset.forEach(function(d) {
-    //     for(var j = year; j < 2012; j++) {
+     dataset.forEach(function(d) {
+         for(var j = year; j < 2012; j++) {
         
-    //         if(d[j + ""] > 0 && d[j + ""] < minLife) {
-    //             minLife = d[j + ""];
-    //         }
+             if(d[j + ""] > 0 && d[j + ""] < minLife) {
+                 minLife = d[j + ""];
+             }
             
-    //         if(d[j + ""] > maxLife) {
-    //             maxLife = d[j + ""];
-    //         }
-    //     }
-    // });
+             if(d[j + ""] > maxLife) {
+                 maxLife = d[j + ""];
+             }
+         }
+     });
     
     
     //Create the scale for the choropleth
     var colorScale = d3.scale.linear()
-        .domain([minLife, maxLife])
-        .range(["red", "white"]);
+        .domain([minLife, (minLife+maxLife)/2, maxLife])
+        .range(["red", "white", "green"]);
     
     
     //Change map colors to match scaled colors based on data values
@@ -183,7 +187,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .append("svg:g") //Put the gradient in a g element inside of the svg
             .attr("width", "400")
             .attr("height", "50")
-            .attr("transform", "translate(200, 350)"); //Put the gradient at the bottom of the map
+            .attr("transform", "translate(40, 500)"); //Put the gradient at the bottom of the map
     
     //Define the gradient with a defs element
     var defs = gradient.append("defs");
@@ -200,6 +204,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 offset: "0%",
                 style: "stop-color:" + colorScale(minLife) + "; stop-opacity:1",
             });
+    linearGrad.append("stop") //Tell where to start the gardient (min)
+            .attr({
+                offset: "50%",
+                style: "stop-color:" + colorScale((minLife+maxLife)/2) + "; stop-opacity:1",
+            });
     linearGrad.append("stop") //Tell where to end the gradient (max)
             .attr({
                 offset: "100%",
@@ -211,7 +220,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 height: 30,
                 rx: 2,
                 ry: 2,
-                style: "fill:url(#grad1)" //Fill rectangle with the gradient created
+                style: "fill:url(#grad1); stroke-width:1; stroke:rgb(60,60,60)" //Fill rectangle with the gradient created
             });
     gradient.append("text") //Append the text telling the min life
         .attr({
@@ -223,13 +232,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
     gradient.append("text") //Append the text telling the max life
         .attr({
             y: 20,
-            x: 200,
-            fill: "black",
+            x: 220,
+            fill: "white",
         })
         .text("Max @ " + Math.round(maxLife) + "y");
     
     //Create width, height, and padding for the line charts
-    var w = 770;
+    var w = 1400;
     var h = 300;
     var padding = 50;
     
@@ -252,7 +261,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .attr("width", w)
             .attr("height", h)
             .attr("class", "countryGraph1")
-            .attr("style", "margin-left: -20;"); //Shift the line chart back (for looks).
+            .attr("style", "margin: 0 auto;"); //Shift the line chart
  
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
         dataset.forEach(function(d, i) {
