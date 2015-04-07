@@ -81,7 +81,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     });
     
     //Change variables on slider change
-    $("#slider").bind("valuesChanged", function(e, data){
+    $("#slider").bind("valuesChanging", function(e, data){
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
         // main.select('.main.axis.month').call(x1MonthAxis);
@@ -96,7 +96,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             });
 
 
-            var newTransition = d3.select("body").transition();
+            var newTransition = d3.select("body");
             newTransition.select("#xAxis").call(xAxis);
             newTransition.select("#chartLine")
                 .attr("d", line(entries));
@@ -366,7 +366,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("y", 20)
                 .attr("x", 20)
                 .text(dataset[dataIndex]["Country Name"] + ", Slope = " + slope.toFixed(2))
-                .attr("fill", "black");
+                .attr("fill", "black")
+                .attr("class", "slopeText");
         }
         else {
             circleFill = "blue";
@@ -392,74 +393,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("class","line")
                 .attr("id","chartLine")
                 .attr("d", line);
-
-        // var circles = canvas.selectAll(".dot")
-        //         .data(entries)
-        //         .enter().append("circle")
-        //         .attr("class", "dot")
-        //         .attr("fill", "steelblue")
-        //         .attr("cx", line.x())
-        //         .attr("cy", line.y())
-        //         .attr("r", 3.5);
-
-
-        //Draw circles and lines for each year
-        // for(var j = 1960; j <= 2012; j++) {
-
-        //     if(dataset[dataIndex][j + ""] <= 0)
-        //     {
-        //         continue; //Skips iteration. Don't draw a year if there is no data
-        //     }
-
-            //Draws circles in correct places (x and y)
-            // var circles = canvas.append("circle")
-            //     .attr("cx", xScale(j + ""))
-            //     .attr("cy", yScale(dataset[dataIndex][j + ""]))
-            //     .attr("r", 3)
-            //     .attr("fill", circleFill);
-            
-            //Draws first lines point starting at current circle
-            // var lines = canvas.append("line")
-            //     .attr({
-            //             x1: xScale(j + ""),
-            //             y1: yScale(dataset[dataIndex][j + ""]),
-            //             stroke: circleFill
-            //           });
-            
-            //Draw second line point to next non-zero point
-            // if(j < endYear) { //If you actually should draw a line
-            //     if(dataset[dataIndex][(j+1) + ""] > 0) {
-            //         lines.attr({
-            //             x2: xScale((j+1) + ""),
-            //             y2: yScale(dataset[dataIndex][(j+1) + ""])
-            //         });
-            //     }
-            //     else { //If no data for next point
-            //         for(var k = j+2; k < 2012; k++) { //Start at point two up from current
-            //             if(dataset[dataIndex][k + ""] > 0) { //If point exists
-            //                 lines.attr({
-            //                     x2: xScale(k + ""),
-            //                     y2: yScale(dataset[dataIndex][k + ""])
-            //                 });
-            //                 break;
-            //             }
-            //             if(k >= endYear) { //If no real values left to draw to
-            //                 lines.attr({
-            //                     x2: xScale(j + ""),
-            //                     y2: yScale(dataset[dataIndex][j + ""])
-            //                 });
-            //                 break;
-            //             }
-            //         } //for
-            //     } //else  
-            // }
-            // else {
-            //     lines.attr({
-            //         x2: xScale(j + ""),
-            //         y2: yScale(dataset[dataIndex][j + ""])
-            //     });
-            // }
-        // } //Drawing for
     } //countryClick()
 
 }); //.csv
