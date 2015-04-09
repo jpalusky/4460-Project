@@ -89,7 +89,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
         maxDatasetYear = Math.round(data.values.max);
         // main.select('.main.axis.month').call(x1MonthAxis);
         xScale.domain([minDatasetYear, maxDatasetYear]);
-
+        
+        createChoropleth(minDatasetYear, maxDatasetYear);
         
         d3.csv("LifeData.csv", function(error, dataset) {
 
@@ -106,11 +107,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
             newTransition.select("#xAxis").call(xAxis);
             newTransition.select("#chartLine")
                 .attr("d", line(entries));
-            // newTransition.selectAll(".dot")
-                // .filter(function(d){ return d.key < 2000;};)
-                // .attr("cx", line.x())
-                // .attr("cy", line.y());
-            // console.log("Values just changed. min: " + minDatasetYear + " max: " + maxDatasetYear);
         });
     });
 
@@ -119,7 +115,9 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var basic_choropleth = new Datamap({
         element: document.getElementById("basic_choropleth"),
         geographyConfig: {
-            highlightBorderColor: '#FFFC99',
+            highlightOnHover: true,
+            highlightFillColor: "E0E0FF",
+            highlightBorderColor: '#000000',
             borderColor: '#606060',
             popupTemplate: function(geography) {
                     //Details on demand settings
@@ -127,15 +125,19 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     dataset.forEach(function(d, i){
                         if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", ""))
                         {
+                            var lifeExpect = d[maxDatasetYear + ""];
+                            var difference = (d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear);
                             tooltipOutput = '<div class="hoverinfo">'
                                             + geography.properties.name + '<br>'
-                                            + 'Year: ' +  year + '<br>'
-                                            + 'Life Expenctency: ' + Math.round(d[year + ""]);
+                                            + 'Year: ' +  maxDatasetYear + '<br>'
+                                            + 'Life Expenctency: ' + lifeExpect.toFixed(2) + '<br>'
+                                            + 'Difference: ' + difference.toFixed(2);
+                                            
                         }
                     });
                     return tooltipOutput;
             },
-            highlightBorderWidth: 0
+            highlightBorderWidth: 1
           },
         done: function(datamap) { //On country click
             datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
@@ -172,12 +174,14 @@ d3.csv("LifeData.csv", function(error, dataset) {
      });
     
     
+
     //Create the scale for the choropleth
     var colorScale = d3.scale.linear()
         .domain([minLife, (minLife+maxLife)/2, maxLife])
-        .range(["red", "white", "green"]);
+        .range(["#FF4D4D", "white", "#40BD28"]);
+
     
-    
+  /*  
     //Change map colors to match scaled colors based on data values
     dataset.forEach(function(d){
         var newColor = {}; //Not quite sure why this works. Is this an object?
@@ -192,7 +196,56 @@ d3.csv("LifeData.csv", function(error, dataset) {
         }
             
     });
+    */
     
+
+    var createChoropleth = function(greatestYear, leastYear) {
+        //Find the min and max differences.
+        var choroplethDifMax = 0;
+        var choroplethDifMin = 100;
+
+        dataset.forEach(function(d){
+            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
+            {
+                var currentDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
+                if(currentDif > choroplethDifMax){
+                    choroplethDifMax = currentDif;
+                }
+                else if(currentDif < choroplethDifMin){
+                    choroplethDifMin = currentDif;
+                }
+            }
+         });
+
+        //Create the scale for the choropleth
+        var colorScale2 = d3.scale.linear()
+        .domain([choroplethDifMin, 0, choroplethDifMax])
+        .range(["#FF4D4D", "white", "#40BD28"]);
+
+        //Color the choropleth
+        dataset.forEach(function(d){
+            var newColor = {};
+            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0){
+                var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
+                //Not quite sure why this works. Is this an object?
+                newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
+            }
+            else{
+                newColor[d["Country Code"]] = "rgb(96, 96, 96)";
+            }
+            basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
+
+            //Trying to stop the wierd some countries being green issue
+            //Does not work.
+            if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
+            {
+                newColor[d["Country Code"]] === "blue";
+            }
+
+        });
+    }
+    createChoropleth(minDatasetYear, maxDatasetYear);
+
     
     //Create linear gradient below map (this is a bit of a process)
     var gradient = d3.select("#basic_choropleth").selectAll("svg")
@@ -238,16 +291,16 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .attr({
             y: 20,
             x: 5,
-            fill: "white",
+            fill: "black",
         })
-        .text("Min @ " + Math.round(minLife) + "y");
+        .text("Min: " + Math.round(minLife) + " years");
     gradient.append("text") //Append the text telling the max life
         .attr({
             y: 20,
-            x: 220,
-            fill: "white",
+            x: 203,
+            fill: "black",
         })
-        .text("Max @ " + Math.round(maxLife) + "y");
+        .text("Max: " + Math.round(maxLife) + " years");
     
     //Create width, height, and padding for the line charts
     var w = 1400;
