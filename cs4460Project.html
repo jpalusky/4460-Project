@@ -73,6 +73,9 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .x(function(d, i) { return xScale(+d.key); })
                 .y(function(d, i) { return yScale(+d['value']); });
 
+    var lineGraphs = [];
+    var newGraphOffset = 0;
+
     //Create the slider
     $("#slider").rangeSlider({
         bounds:{min: minDatasetYear, max: maxDatasetYear},
@@ -95,6 +98,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 entries = entries.filter(function(element){
                     return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
             });
+
+            var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
+            d3.select(".slopeText")
+                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
 
             var newTransition = d3.select("body");
             newTransition.select("#xAxis").call(xAxis);
@@ -405,7 +412,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 break;
             }
         }
-        slope = (dataset[dataIndex][startYear + ""] - dataset[dataIndex][endYear + ""])/(startYear - endYear);   
+        slope = calcSlope( dataset[dataIndex][startYear + ""], dataset[dataIndex][endYear + ""] ,startYear, endYear);   
 
 
         //Circle fill color
@@ -449,6 +456,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
 
 }); //.csv
     
+// createLineGraph(dataset, lineGraphs){
+    
+// }
+
+calcSlope = function(x1, x2, y1, y2){
+    return (x2 - x1)/(y2 - y1);
+}
 
 </script>
     
