@@ -109,7 +109,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         element: document.getElementById("basic_choropleth"),
         geographyConfig: {
             highlightOnHover: true,
-            highlightFillColor: "E0E0FF",
+            highlightFillColor: "#E0E0FF",
             highlightBorderColor: '#000000',
             borderColor: '#606060',
             popupTemplate: function(geography) {
@@ -118,13 +118,14 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     dataset.forEach(function(d, i){
                         if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", ""))
                         {
-                            var lifeExpect = d[maxDatasetYear + ""];
-                            var difference = (d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear);
+                            var lifeExpectMin = d[minDatasetYear + ""];
+                            var lifeExpectMax = d[maxDatasetYear + ""];
+                            var slope = (d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear);
                             tooltipOutput = '<div class="hoverinfo">'
                                             + geography.properties.name + '<br>'
-                                            + 'Year: ' +  maxDatasetYear + '<br>'
-                                            + 'Life Expenctency: ' + lifeExpect.toFixed(2) + '<br>'
-                                            + 'Difference: ' + difference.toFixed(2);
+                                            + minDatasetYear + ' data value: ' + lifeExpectMin.toFixed(2) + '<br>'
+                                            + maxDatasetYear + ' data value: ' + lifeExpectMax.toFixed(2) + '<br>'
+                                            + 'Change: ' + (slope*100).toFixed(2)+ "%";
                                             
                         }
                     });
