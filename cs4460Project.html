@@ -118,11 +118,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     dataset.forEach(function(d, i){
                         if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", ""))
                         {
+                            var lifeExpect = d[maxDatasetYear + ""];
+                            var difference = (d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear);
                             tooltipOutput = '<div class="hoverinfo">'
                                             + geography.properties.name + '<br>'
                                             + 'Year: ' +  maxDatasetYear + '<br>'
-                                            + 'Life Expenctency: ' + Math.round(d[maxDatasetYear + ""]) + '<br>'
-                                            + 'Difference: ' + Math.round((d[minDatasetYear + ""]+d[minDatasetYear + ""])/2);
+                                            + 'Life Expenctency: ' + lifeExpect.toFixed(2) + '<br>'
+                                            + 'Difference: ' + difference.toFixed(2);
                                             
                         }
                     });
@@ -215,9 +217,15 @@ d3.csv("LifeData.csv", function(error, dataset) {
 
         //Color the choropleth
         dataset.forEach(function(d){
-            var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
-            var newColor = {}; //Not quite sure why this works. Is this an object?
-            newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
+            var newColor = {};
+            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0){
+                var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
+                //Not quite sure why this works. Is this an object?
+                newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
+            }
+            else{
+                newColor[d["Country Code"]] = "rgb(96, 96, 96)";
+            }
             basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
 
             //Trying to stop the wierd some countries being green issue
