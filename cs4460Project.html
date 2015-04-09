@@ -44,6 +44,7 @@
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="topojson.js"></script>
     <script src="datamaps.world.min.js"></script>
+    <script src="zoompan.js"></script>
     
     <!-- Div for cholopleth map -->
     <div id="basic_choropleth" style="position: relative; width: 1400px; height:600px; margin: 0 auto;"></div>
@@ -94,19 +95,19 @@ d3.csv("LifeData.csv", function(error, dataset) {
         
         d3.csv("LifeData.csv", function(error, dataset) {
 
-            var entries = d3.entries(dataset[dataIndex]);
-                entries = entries.filter(function(element){
-                    return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
-            });
+        var entries = d3.entries(dataset[dataIndex]);
+            entries = entries.filter(function(element){
+                return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
+        });
 
-            var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
-            d3.select(".slopeText")
-                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
+        var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
+        d3.select(".slopeText")
+            .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
 
-            var newTransition = d3.select("body");
-            newTransition.select("#xAxis").call(xAxis);
-            newTransition.select("#chartLine")
-                .attr("d", line(entries));
+        var newTransition = d3.select("body");
+        newTransition.select("#xAxis").call(xAxis);
+        newTransition.select("#chartLine")
+            .attr("d", line(entries));
         });
     });
 
@@ -147,6 +148,43 @@ d3.csv("LifeData.csv", function(error, dataset) {
         },
     });
     
+    
+    
+    //Zoom and pan
+    var beforePan
+
+    beforePan = function(oldPan, newPan){
+      var stopHorizontal = false
+        , stopVertical = false
+        , gutterWidth = 800
+        , gutterHeight = 400
+          // Computed variables
+        , sizes = this.getSizes()
+        , leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth
+        , rightLimit = sizes.width - gutterWidth - (sizes.viewBox.x * sizes.realZoom)
+        , topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + gutterHeight
+        , bottomLimit = sizes.height - gutterHeight - (sizes.viewBox.y * sizes.realZoom)
+
+      customPan = {}
+      customPan.x = Math.max(leftLimit, Math.min(rightLimit, newPan.x))
+      customPan.y = Math.max(topLimit, Math.min(bottomLimit, newPan.y))
+
+      return customPan
+    }
+
+    var mapsvg = document.querySelector(".datamap");
+    var panZoom = svgPanZoom(mapsvg, {
+        zoomEnabled: true,
+        controlIconsEnabled: true,
+        fit: true,
+        center: true,
+        zoomScaleSensitivity: 0.5,
+        minZoom: 1,
+        maxZoom: 3,
+        beforePan: beforePan
+    });
+    
+    
     //Initial variables for min and max of the dataSet for choropleth colors
     var minLife = 100;
     var maxLife = 0;
@@ -175,11 +213,16 @@ d3.csv("LifeData.csv", function(error, dataset) {
      });
     
     
-
+    /*
     //Create the scale for the choropleth
     var colorScale = d3.scale.linear()
         .domain([minLife, (minLife+maxLife)/2, maxLife])
         .range(["#FF4D4D", "white", "#40BD28"]);
+    */
+    
+    var colorScale = d3.scale.linear()
+        .domain([minLife, 0, maxLife])
+        .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
 
     
   /*  
@@ -199,55 +242,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
     });
     */
     
-
-    var createChoropleth = function(greatestYear, leastYear) {
-        //Find the min and max differences.
-        var choroplethDifMax = 0;
-        var choroplethDifMin = 100;
-
-        dataset.forEach(function(d){
-            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
-            {
-                var currentDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
-                if(currentDif > choroplethDifMax){
-                    choroplethDifMax = currentDif;
-                }
-                else if(currentDif < choroplethDifMin){
-                    choroplethDifMin = currentDif;
-                }
-            }
-         });
-
-        //Create the scale for the choropleth
-        var colorScale2 = d3.scale.linear()
-        .domain([choroplethDifMin, 0, choroplethDifMax])
-        .range(["#FF4D4D", "white", "#40BD28"]);
-
-        //Color the choropleth
-        dataset.forEach(function(d){
-            var newColor = {};
-            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0){
-                var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
-                //Not quite sure why this works. Is this an object?
-                newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
-            }
-            else{
-                newColor[d["Country Code"]] = "rgb(96, 96, 96)";
-            }
-            basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
-
-            //Trying to stop the wierd some countries being green issue
-            //Does not work.
-            if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
-            {
-                newColor[d["Country Code"]] === "blue";
-            }
-
-        });
-    }
-    createChoropleth(minDatasetYear, maxDatasetYear);
-
     
+    var createGradient = function(minChange, maxChange){
     //Create linear gradient below map (this is a bit of a process)
     var gradient = d3.select("#basic_choropleth").selectAll("svg")
             .append("svg:g") //Put the gradient in a g element inside of the svg
@@ -268,17 +264,17 @@ d3.csv("LifeData.csv", function(error, dataset) {
     linearGrad.append("stop") //Tell where to start the gardient (min)
             .attr({
                 offset: "0%",
-                style: "stop-color:" + colorScale(minLife) + "; stop-opacity:1",
+                style: "stop-color:" + colorScale(minChange) + "; stop-opacity:1",
             });
     linearGrad.append("stop") //Tell where to start the gardient (min)
             .attr({
-                offset: "50%",
-                style: "stop-color:" + colorScale((minLife+maxLife)/2) + "; stop-opacity:1",
+                offset: "15%",
+                style: "stop-color:" + colorScale(0) + "; stop-opacity:1",
             });
     linearGrad.append("stop") //Tell where to end the gradient (max)
             .attr({
                 offset: "100%",
-                style: "stop-color:" + colorScale(maxLife)+ ";stop-opacity:1",
+                style: "stop-color:" + colorScale(maxChange)+ ";stop-opacity:1",
             });
     var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
         .attr({
@@ -294,14 +290,78 @@ d3.csv("LifeData.csv", function(error, dataset) {
             x: 5,
             fill: "black",
         })
-        .text("Min: " + Math.round(minLife) + " years");
+        .text("Min: " + (minChange*100).toFixed(2) + "%");
     gradient.append("text") //Append the text telling the max life
         .attr({
             y: 20,
-            x: 203,
+            x: 205,
             fill: "black",
         })
-        .text("Max: " + Math.round(maxLife) + " years");
+        .text("Max: " + (maxChange*100).toFixed(2) + "%");
+    }
+    
+
+    var createChoropleth = function(greatestYear, leastYear) {
+        //Find the min and max differences.
+        var choroplethDifMax = 0;
+        var choroplethDifMin = 100;
+        
+        //attempt to create threshold color values
+        //var diffCount = 0;
+        //var diffSum = 0;
+        //var diffAverage = 0;
+
+
+        dataset.forEach(function(d){
+            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
+            {
+                //diffCount++;
+                var currentDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
+                //diffSum += currentDif;
+                if(currentDif > choroplethDifMax){
+                    choroplethDifMax = currentDif;
+                }
+                else if(currentDif < choroplethDifMin){
+                    choroplethDifMin = currentDif;
+                }
+            }
+         });
+        
+        //diffAverage = diffSum/diffCount;
+        //console.log(diffAverage);
+
+        //Create the scale for the choropleth
+        var colorScale2 = d3.scale.linear()
+        .domain([choroplethDifMin, 0, choroplethDifMax])
+        //.domain([(choroplethDifMin+diffAverage)/2, 0, (choroplethDifMax+diffAverage)/2])
+        .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
+        colorScale = colorScale2;
+        
+        createGradient(choroplethDifMin, choroplethDifMax);
+
+        //Color the choropleth
+        dataset.forEach(function(d){
+            var newColor = {};
+            if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0){
+                var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
+                //Not quite sure why this works. Is this an object?
+                newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
+            }
+            else{
+                newColor[d["Country Code"]] = "rgb(130, 130, 130)";
+            }
+            basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
+
+            //Trying to stop the wierd some countries being green issue
+            //Does not work.
+            if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
+            {
+                newColor[d["Country Code"]] === "blue";
+            }
+
+        });
+    }
+    createChoropleth(minDatasetYear, maxDatasetYear);
     
     //Create width, height, and padding for the line charts
     var w = 1400;
@@ -312,6 +372,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     xScale = d3.scale.linear()
         .domain([1960, 2014])
         .range([padding, w - padding]);
+
     
     
     //Function that runs when you click a country
