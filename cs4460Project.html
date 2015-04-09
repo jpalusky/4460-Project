@@ -151,13 +151,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
     
     
     //Zoom and pan
-    var beforePan
+    var beforePan;
 
     beforePan = function(oldPan, newPan){
       var stopHorizontal = false
         , stopVertical = false
-        , gutterWidth = 800
-        , gutterHeight = 400
+        , gutterWidth = 1300
+        , gutterHeight = 500
           // Computed variables
         , sizes = this.getSizes()
         , leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth
@@ -169,11 +169,12 @@ d3.csv("LifeData.csv", function(error, dataset) {
       customPan.x = Math.max(leftLimit, Math.min(rightLimit, newPan.x))
       customPan.y = Math.max(topLimit, Math.min(bottomLimit, newPan.y))
 
-      return customPan
+      return customPan;
     }
 
     var mapsvg = document.querySelector(".datamap");
     var panZoom = svgPanZoom(mapsvg, {
+        mouseWheelZoomEnabled: false,
         zoomEnabled: true,
         controlIconsEnabled: true,
         fit: true,
