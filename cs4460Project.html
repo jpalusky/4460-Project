@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
     <meta charset="utf-8">
-    <title>D3 Datamaps Test 2</title>
+    <title>Team World Life</title>
     <style>
         /*CSS STYLES*/
         
@@ -85,7 +85,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     });
     
     //Change variables on slider change
-    $("#slider").bind("valuesChanging", function(e, data){
+    $("#slider").on("valuesChanging", function(e, data){
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
         // main.select('.main.axis.month').call(x1MonthAxis);
@@ -94,22 +94,23 @@ d3.csv("LifeData.csv", function(error, dataset) {
         createChoropleth(minDatasetYear, maxDatasetYear);
         
         d3.csv("LifeData.csv", function(error, dataset) {
+            var entries = d3.entries(dataset[dataIndex]);
+                entries = entries.filter(function(element){
+                    return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
+            });
 
-        var entries = d3.entries(dataset[dataIndex]);
-            entries = entries.filter(function(element){
-                return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
-        });
+            var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
+            d3.select(".slopeText")
+                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
 
-        var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
-        d3.select(".slopeText")
-            .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
-
-        var newTransition = d3.select("body");
-        newTransition.select("#xAxis").call(xAxis);
-        newTransition.select("#chartLine")
-            .attr("d", line(entries));
+            var newTransition = d3.select("body");
+            newTransition.select("#xAxis").call(xAxis);
+            newTransition.select("#chartLine")
+                .attr("d", line(entries));
         });
     });
+    
+    
 
     
     //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
@@ -244,7 +245,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     */
     
     
-    var createGradient = function(minChange, maxChange){
+var createGradient = function(minChange, maxChange){
     //Create linear gradient below map (this is a bit of a process)
     var gradient = d3.select("#basic_choropleth").selectAll("svg")
             .append("svg:g") //Put the gradient in a g element inside of the svg
@@ -333,7 +334,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
 
         //Create the scale for the choropleth
         var colorScale2 = d3.scale.linear()
-        .domain([choroplethDifMin, 0, choroplethDifMax])
+        //NOTE: Un-comment the .domain below to have the colorscale that takes the actual year differences.
+        //.domain([choroplethDifMin, 0, choroplethDifMax])
+        .domain([-1.0, 0, 1.0])
+        .clamp(true)
         //.domain([(choroplethDifMin+diffAverage)/2, 0, (choroplethDifMax+diffAverage)/2])
         .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
         colorScale = colorScale2;
@@ -371,14 +375,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
     
     //Line chart year scaling
     xScale = d3.scale.linear()
-        .domain([1960, 2014])
+        .domain([minDatasetYear, maxDatasetYear])
         .range([padding, w - padding]);
 
     
     
     //Function that runs when you click a country
     var countryClick = function(countryIn, newCountryBoolean) {
-        
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
         }
@@ -409,7 +412,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         
         //Find min value from the dataset
         var minValue = 100;
-        for(var j = 1960; j < 2012; j++) {
+        for(var j = minDatasetYear; j < maxDatasetYear; j++) {
         
             if(dataset[dataIndex][j + ""] > 0 && dataset[dataIndex][j + ""] < minValue)
             {
@@ -463,27 +466,22 @@ d3.csv("LifeData.csv", function(error, dataset) {
         var endYear;
         var slope;
         
-        for(var j = 1960; j < 2012; j++) { //Find a start year if no value in 1960
+        for(var j = minDatasetYear; j < maxDatasetYear; j++) { //Find a start year if no value in 1960
             if(dataset[dataIndex][j + ""] > 0) {
                 startYear = j;
                 break;
             }
         }
-        for(var j = 2012; j >= 1960; j--) { //Find end year if no value in 2011
+        for(var j = maxDatasetYear; j >= minDatasetYear; j--) { //Find end year if no value in 2011
             if(dataset[dataIndex][j + ""] > 0) {
                 endYear = j;
                 break;
             }
         }
         slope = calcSlope( dataset[dataIndex][startYear + ""], dataset[dataIndex][endYear + ""] ,startYear, endYear);   
-
-
-        //Circle fill color
-        var circleFill;
         
         //This changes slope text (or color, if you want) if the slope is real or not
         if (!isNaN(slope) && slope !== 0) {
-            circleFill = "blue";
             canvas.append("text")
                 .attr("y", 20)
                 .attr("x", 20)
@@ -492,7 +490,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("class", "slopeText");
         }
         else {
-            circleFill = "blue";
             canvas.append("text")
                 .attr("fill", "black")
                 .attr("y", 20)
@@ -501,14 +498,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("fill", "black");
         }
 
-        // console.log(dataset[0].keys());
-
         var entries = d3.entries(dataset[dataIndex]);
         entries = entries.filter(function(element){
-            return(!isNaN(+element.key) && 1960 <= +element.key && +element.key <= 2012);
+            return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
         });
-
-        // console.log(entries);
 
         canvas.append("path")
                 .datum(entries)
