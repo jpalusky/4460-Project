@@ -52,7 +52,6 @@
     
     <!-- Slider -->
     <div id="slider" style="width: 1400px; margin: 0 auto;"></div>
-
     
 <!-- D3 and Javascript portion -->
 <script>
@@ -60,8 +59,11 @@
 d3.csv("LifeData.csv", function(error, dataset) {
     
     //To do: calculate first and last year fields with javascript or d3
+    var initialMinDatasetYear = 1960;
+    var initialMaxDatasetYear = 2012;
     var minDatasetYear = 1960;
     var maxDatasetYear = 2012;
+    var currentCountry;
     
     var xScale = d3.scale.linear();
     var yScale = d3.scale.linear();
@@ -102,16 +104,16 @@ d3.csv("LifeData.csv", function(error, dataset) {
             var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
             d3.select(".slopeText")
                 .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
-
+            
+            /* This isn't needed any more. I added a countryClick call so that the y axis updates too.
             var newTransition = d3.select("body");
             newTransition.select("#xAxis").call(xAxis);
             newTransition.select("#chartLine")
                 .attr("d", line(entries));
+            */
         });
+        countryClick(currentCountry, 1);
     });
-    
-    
-
     
     //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
     var basic_choropleth = new Datamap({
@@ -127,15 +129,23 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     dataset.forEach(function(d, i){
                         if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", ""))
                         {
-                            var lifeExpectMin = d[minDatasetYear + ""];
-                            var lifeExpectMax = d[maxDatasetYear + ""];
-                            var slope = (d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear);
+                            var lifeExpectMin = (d[minDatasetYear + ""]).toFixed(2);
+                            var lifeExpectMax = (d[maxDatasetYear + ""]).toFixed(2);
+                            var slope = (((d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear))*(100)).toFixed(2);
+                            if(isNaN(lifeExpectMin) || lifeExpectMin <= 0){
+                                lifeExpectMin = "N/A";  
+                            }
+                            if(isNaN(lifeExpectMax) || lifeExpectMax <= 0){
+                                lifeExpectMax = "N/A"; 
+                            }
+                            if(isNaN(lifeExpectMin) || isNaN(lifeExpectMax)){
+                                slope = "N/A";
+                            }
                             tooltipOutput = '<div class="hoverinfo">'
                                             + geography.properties.name + '<br>'
-                                            + minDatasetYear + ' data value: ' + lifeExpectMin.toFixed(2) + '<br>'
-                                            + maxDatasetYear + ' data value: ' + lifeExpectMax.toFixed(2) + '<br>'
-                                            + 'Change: ' + (slope*100).toFixed(2)+ "%";
-                                            
+                                            + minDatasetYear + ' data value: ' + lifeExpectMin + '<br>'
+                                            + maxDatasetYear + ' data value: ' + lifeExpectMax + '<br>'
+                                            + 'Change: ' + slope + "%";           
                         }
                     });
                     return tooltipOutput;
@@ -144,6 +154,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
           },
         done: function(datamap) { //On country click
             datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+                currentCountry = geography.id;
                 countryClick(geography.id, true); //Boolean input "true" removes old graph
               });
         },
@@ -214,112 +225,77 @@ d3.csv("LifeData.csv", function(error, dataset) {
          }
      });
     
-    
-    /*
-    //Create the scale for the choropleth
-    var colorScale = d3.scale.linear()
-        .domain([minLife, (minLife+maxLife)/2, maxLife])
-        .range(["#FF4D4D", "white", "#40BD28"]);
-    */
-    
     var colorScale = d3.scale.linear()
         .domain([minLife, 0, maxLife])
         .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
+    
+    var createGradient = function(minChange, maxChange){
+        //Create linear gradient below map (this is a bit of a process)
+        var gradient = d3.select("#basic_choropleth").selectAll("svg")
+                .append("svg:g") //Put the gradient in a g element inside of the svg
+                .attr("width", "400")
+                .attr("height", "50")
+                .attr("transform", "translate(40, 500)"); //Put the gradient at the bottom of the map
 
-    
-  /*  
-    //Change map colors to match scaled colors based on data values
-    dataset.forEach(function(d){
-        var newColor = {}; //Not quite sure why this works. Is this an object?
-        newColor[d["Country Code"]] = colorScale(d[year + ""]); //Puts a single item array into the newColor variable?
-        basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
-        
-        //Trying to stop the wierd some countries being green issue
-        //Does not work.
-        if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
-        {
-            newColor[d["Country Code"]] === "blue";
-        }
-            
-    });
-    */
-    
-    
-var createGradient = function(minChange, maxChange){
-    //Create linear gradient below map (this is a bit of a process)
-    var gradient = d3.select("#basic_choropleth").selectAll("svg")
-            .append("svg:g") //Put the gradient in a g element inside of the svg
-            .attr("width", "400")
-            .attr("height", "50")
-            .attr("transform", "translate(40, 500)"); //Put the gradient at the bottom of the map
-    
-    //Define the gradient with a defs element
-    var defs = gradient.append("defs");
-    var linearGrad = defs.append("linearGradient")
-        .attr({
-            id: "grad1",
-            x1: "0%", 
-            y1: "0%",
-            x2: "100%",
-            y2: "0%",
-        });
-    linearGrad.append("stop") //Tell where to start the gardient (min)
+        //Define the gradient with a defs element
+        var defs = gradient.append("defs");
+        var linearGrad = defs.append("linearGradient")
             .attr({
-                offset: "0%",
-                style: "stop-color:" + colorScale(minChange) + "; stop-opacity:1",
+                id: "grad1",
+                x1: "0%", 
+                y1: "0%",
+                x2: "100%",
+                y2: "0%",
             });
-    linearGrad.append("stop") //Tell where to start the gardient (min)
+        linearGrad.append("stop") //Tell where to start the gardient (min)
+                .attr({
+                    offset: "0%",
+                    style: "stop-color:" + colorScale(minChange) + "; stop-opacity:1",
+                });
+        linearGrad.append("stop") //Tell where to start the gardient (min)
+                .attr({
+                    offset: "15%",
+                    style: "stop-color:" + colorScale(0) + "; stop-opacity:1",
+                });
+        linearGrad.append("stop") //Tell where to end the gradient (max)
+                .attr({
+                    offset: "100%",
+                    style: "stop-color:" + colorScale(maxChange)+ ";stop-opacity:1",
+                });
+        var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
             .attr({
-                offset: "15%",
-                style: "stop-color:" + colorScale(0) + "; stop-opacity:1",
-            });
-    linearGrad.append("stop") //Tell where to end the gradient (max)
+                    width: 300,
+                    height: 30,
+                    rx: 2,
+                    ry: 2,
+                    style: "fill:url(#grad1); stroke-width:1; stroke:rgb(60,60,60)" //Fill rectangle with the gradient created
+                });
+        gradient.append("text") //Append the text telling the min life
             .attr({
-                offset: "100%",
-                style: "stop-color:" + colorScale(maxChange)+ ";stop-opacity:1",
-            });
-    var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
-        .attr({
-                width: 300,
-                height: 30,
-                rx: 2,
-                ry: 2,
-                style: "fill:url(#grad1); stroke-width:1; stroke:rgb(60,60,60)" //Fill rectangle with the gradient created
-            });
-    gradient.append("text") //Append the text telling the min life
-        .attr({
-            y: 20,
-            x: 5,
-            fill: "black",
-        })
-        .text("Min: " + (minChange*100).toFixed(2) + "%");
-    gradient.append("text") //Append the text telling the max life
-        .attr({
-            y: 20,
-            x: 205,
-            fill: "black",
-        })
-        .text("Max: " + (maxChange*100).toFixed(2) + "%");
-    }
+                y: 20,
+                x: 5,
+                fill: "black",
+            })
+            .text("Min: " + (minChange*100).toFixed(2) + "%");
+        gradient.append("text") //Append the text telling the max life
+            .attr({
+                y: 20,
+                x: 205,
+                fill: "black",
+            })
+            .text("Max: " + (maxChange*100).toFixed(2) + "%");
+    }//Create gradient
     
 
     var createChoropleth = function(greatestYear, leastYear) {
         //Find the min and max differences.
         var choroplethDifMax = 0;
         var choroplethDifMin = 100;
-        
-        //attempt to create threshold color values
-        //var diffCount = 0;
-        //var diffSum = 0;
-        //var diffAverage = 0;
-
 
         dataset.forEach(function(d){
             if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
             {
-                //diffCount++;
                 var currentDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
-                //diffSum += currentDif;
                 if(currentDif > choroplethDifMax){
                     choroplethDifMax = currentDif;
                 }
@@ -328,9 +304,6 @@ var createGradient = function(minChange, maxChange){
                 }
             }
          });
-        
-        //diffAverage = diffSum/diffCount;
-        //console.log(diffAverage);
 
         //Create the scale for the choropleth
         var colorScale2 = d3.scale.linear()
@@ -338,12 +311,11 @@ var createGradient = function(minChange, maxChange){
         //.domain([choroplethDifMin, 0, choroplethDifMax])
         .domain([-1.0, 0, 1.0])
         .clamp(true)
-        //.domain([(choroplethDifMin+diffAverage)/2, 0, (choroplethDifMax+diffAverage)/2])
         .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
         colorScale = colorScale2;
         
         createGradient(choroplethDifMin, choroplethDifMax);
-
+        
         //Color the choropleth
         dataset.forEach(function(d){
             var newColor = {};
@@ -356,14 +328,6 @@ var createGradient = function(minChange, maxChange){
                 newColor[d["Country Code"]] = "rgb(130, 130, 130)";
             }
             basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
-
-            //Trying to stop the wierd some countries being green issue
-            //Does not work.
-            if (newColor[d["Country Code"]] === "rgb(173, 220, 164)")
-            {
-                newColor[d["Country Code"]] === "blue";
-            }
-
         });
     }
     createChoropleth(minDatasetYear, maxDatasetYear);
@@ -411,8 +375,9 @@ var createGradient = function(minChange, maxChange){
         }
         
         //Find min value from the dataset
+        //NOTE: change initiammindatasetyear to mindataset year if you want y axis to dynamically scale
         var minValue = 100;
-        for(var j = minDatasetYear; j < maxDatasetYear; j++) {
+        for(var j = initialMinDatasetYear; j < initialMaxDatasetYear; j++) {
         
             if(dataset[dataIndex][j + ""] > 0 && dataset[dataIndex][j + ""] < minValue)
             {
@@ -454,10 +419,10 @@ var createGradient = function(minChange, maxChange){
 
         //Append yAxis
         canvas.append("g")
-        .attr("class", "axis")
-        .attr("id", "yAxis")
-        .attr("transform", "translate(" + padding + ",0)")
-        .call(yAxis);
+            .attr("class", "axis")
+            .attr("id", "yAxis")
+            .attr("transform", "translate(" + padding + ",0)")
+            .call(yAxis);
 
 
 
@@ -509,12 +474,40 @@ var createGradient = function(minChange, maxChange){
                 .attr("id","chartLine")
                 .attr("d", line);
     } //countryClick()
+    
+    
+    
+    //Popup test:
+    
+    /*
+    var coordinates = [0, 0];
+    coordinates = d3.mouse(document.body);// Selects body. this.parentElement.parentElement.parentElement does the same.
+    var xPosition = coordinates[0];
+    var yPosition = coordinates[1];
+    
+    var test = d3.selectAll(".USA");
+    console.log(test[0]);
+    
+    var rect = document.body.getBoundingClientRect();
+    console.log(rect.top, rect.right, rect.bottom, rect.left);
+    
+    var elem = document.getElementById('basic_choropleth');
+        alert('top = ' + elem.offsetTop + '\nleft = ' + elem.offsetLeft);
+    
+    d3.select(".svg-pan-zoom_viewport")
+        .append("rect")
+        .attr("class", "countryPop")
+        .attr("width", "150px")
+        .attr("height", "100px")
+        .attr("y", "20px")
+        .attr("x", "20px")
+        .attr("fill", "rgba(150,150,150,0.9)");
+        
+    */
+    
 
 }); //.csv
     
-// createLineGraph(dataset, lineGraphs){
-    
-// }
 
 calcSlope = function(x1, x2, y1, y2){
     return (x2 - x1)/(y2 - y1);
