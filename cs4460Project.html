@@ -19,12 +19,29 @@
         }
         
         .axis text {
-            font-family: sans-serif;
+            font-family: Century Gothic, sans-serif;
             font-size: 11px;
         }
         
         text {
             font-family: Century Gothic, sans-serif;
+        }
+        
+        p {
+            font-family: Century Gothic, sans-serif;   
+        }
+        
+        #dropDown {
+            margin-left: 5px;
+            margin-top: 14px;
+            float: left;
+        }
+        
+        .tooltip {
+            padding: 5px;
+            font-family: Century Gothic, sans-serif;
+            text-align: center;
+            color: rgba(0,0,0,0.6);
         }
  
     </style>
@@ -53,6 +70,15 @@
     <!-- Slider -->
     <div id="slider" style="width: 1400px; margin: 0 auto;"></div>
     
+    <br>
+    
+    <p style="float: left; margin-left: 20px;">Country name:</p>
+    <!-- Country dropdown bar --->
+    <select name="countryList" id="dropDown">
+        <option value="All" id="defaultSelect">Select a country</option>
+    </select>
+    
+    
 <!-- D3 and Javascript portion -->
 <script>
 //Input the csv, calling it "dataset"
@@ -64,6 +90,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var minDatasetYear = 1960;
     var maxDatasetYear = 2012;
     var currentCountry;
+    var countryName = [];
     
     var xScale = d3.scale.linear();
     var yScale = d3.scale.linear();
@@ -95,24 +122,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
         
         createChoropleth(minDatasetYear, maxDatasetYear);
         
-        d3.csv("LifeData.csv", function(error, dataset) {
-            var entries = d3.entries(dataset[dataIndex]);
-                entries = entries.filter(function(element){
-                    return(!isNaN(+element.key) && minDatasetYear <= +element.key && +element.key <= maxDatasetYear);
-            });
-
-            var newSlope = calcSlope( dataset[dataIndex][minDatasetYear + ""], dataset[dataIndex][maxDatasetYear + ""] ,minDatasetYear, maxDatasetYear);
-            d3.select(".slopeText")
-                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + newSlope.toFixed(2));
-            
-            /* This isn't needed any more. I added a countryClick call so that the y axis updates too.
-            var newTransition = d3.select("body");
-            newTransition.select("#xAxis").call(xAxis);
-            newTransition.select("#chartLine")
-                .attr("d", line(entries));
-            */
-        });
-        countryClick(currentCountry, 1);
+        //This adds annotations about the world
+        checkForPopups();
+        
+        //This refreshes the line graph
+        countryClick(currentCountry, true);
     });
     
     //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
@@ -209,7 +223,25 @@ d3.csv("LifeData.csv", function(error, dataset) {
             //Plus sign turns data values at years into numbers.
             d[j + ""] = +d[j + ""]; //Turn year to string so that d3 understands it
         }
+        countryName.push([d["Country Name"], d["Country Code"]]);
     });
+    
+    //Country drop down
+    var dropDown = d3.select("#dropDown");
+    var countrySort = countryName.sort();
+    var options = dropDown.selectAll("option")
+        .data(countrySort)
+        .enter()
+        .append("option")
+        .text(function (d, i) { return d[0] + ": " + d[1]; })
+        .attr("value", function (d, i) { return d[1]});
+
+    dropDown.on("change", menuChanged);
+    function menuChanged() { 
+        var selectedValue = d3.event.target.value;
+        currentCountry = selectedValue;
+        countryClick(selectedValue, true);
+    }
     
     //Find min and max from the dataset
      dataset.forEach(function(d) {
@@ -341,14 +373,27 @@ d3.csv("LifeData.csv", function(error, dataset) {
     xScale = d3.scale.linear()
         .domain([minDatasetYear, maxDatasetYear])
         .range([padding, w - padding]);
+    
+    //Create blank space
+    var canvas = d3.select("body")
+        .append("svg")
+        .attr("width", w)
+        .attr("height", h)
+        .attr("class", "countryGraph1")
+        .attr("style", "margin: 0 auto;"); //Shift the line chart
 
     
     
     //Function that runs when you click a country
     var countryClick = function(countryIn, newCountryBoolean) {
+        var dataIndex;
+        
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
         }
+        
+        //Set the country drop down
+        $('#dropDown').val(countryIn);
              
         //Create a new canvas svg element, with class of countryGraph1
         var canvas = d3.select("body")
@@ -357,23 +402,24 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .attr("height", h)
             .attr("class", "countryGraph1")
             .attr("style", "margin: 0 auto;"); //Shift the line chart
- 
+    
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
         dataset.forEach(function(d, i) {
             if(d["Country Code"] == countryIn){
                 dataIndex = i;
             }
+        
+            if(dataIndex === -1) { //
+                canvas.append("text")
+                    .attr("y", h/2)
+                    .attr("x", w/2 - 130)
+                    .text("Data Not Available")
+                    .attr("fill", "black");
+                    return;
+            }
+        
         });
-        
-        if(dataIndex === -1) { //
-            canvas.append("text")
-                .attr("y", h/2)
-                .attr("x", w/2 - 130)
-                .text("Data Not Available")
-                .attr("fill", "black");
-                return;
-        }
-        
+            
         //Find min value from the dataset
         //NOTE: change initiammindatasetyear to mindataset year if you want y axis to dynamically scale
         var minValue = 100;
@@ -450,7 +496,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
             canvas.append("text")
                 .attr("y", 20)
                 .attr("x", 20)
-                .text(dataset[dataIndex]["Country Name"] + ", Slope = " + slope.toFixed(2))
+                .text("Slope (% change) = " + slope.toFixed(2))
+                //.text(dataset[dataIndex]["Country Name"] + ", Slope = " + slope.toFixed(2))
                 .attr("fill", "black")
                 .attr("class", "slopeText");
         }
@@ -459,7 +506,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("fill", "black")
                 .attr("y", 20)
                 .attr("x", 20)
-                .text(dataset[dataIndex]["Country Name"] + ", Slope = N/A")
+                .text("Slope = N/A")
+                //.text(dataset[dataIndex]["Country Name"] + ", Slope = N/A")
                 .attr("fill", "black");
         }
 
@@ -476,34 +524,57 @@ d3.csv("LifeData.csv", function(error, dataset) {
     } //countryClick()
     
     
-    
-    //Popup test:
-    
-    /*
-    var coordinates = [0, 0];
-    coordinates = d3.mouse(document.body);// Selects body. this.parentElement.parentElement.parentElement does the same.
-    var xPosition = coordinates[0];
-    var yPosition = coordinates[1];
-    
-    var test = d3.selectAll(".USA");
-    console.log(test[0]);
-    
-    var rect = document.body.getBoundingClientRect();
-    console.log(rect.top, rect.right, rect.bottom, rect.left);
-    
-    var elem = document.getElementById('basic_choropleth');
-        alert('top = ' + elem.offsetTop + '\nleft = ' + elem.offsetLeft);
-    
-    d3.select(".svg-pan-zoom_viewport")
-        .append("rect")
-        .attr("class", "countryPop")
-        .attr("width", "150px")
-        .attr("height", "100px")
-        .attr("y", "20px")
-        .attr("x", "20px")
-        .attr("fill", "rgba(150,150,150,0.9)");
+    var createPopup = function(textInput, tooltipClass, width, xLocation, yLocation) {
         
-    */
+        var mapSvg = d3.select(".svg-pan-zoom_viewport");
+        
+        var fo = mapSvg.append("foreignObject")
+            .attr({
+                'x': xLocation,
+                'y': yLocation-15,
+                'width': width,
+                'class': "svg-tooltip " + tooltipClass,
+            });
+        var div = fo.append('xhtml:div')
+            .append('div')
+            .attr({
+                'class': 'tooltip',
+            });
+        div.append('p')
+            .html(textInput);
+        var foHeight = div[0][0].getBoundingClientRect().height;
+        fo.attr({
+            'height': foHeight
+        });
+        foHeight-=25;
+        mapSvg.insert('polygon', '.svg-tooltip')
+            .attr({
+                'points': "0,0 0," + foHeight + " " + width + "," + foHeight + " " + width + ",0 " + (width/2+10) + ",0 " + width/2 + "," + -25 + " " + (width/2-10) + ",0",
+                'height': foHeight + 20,
+                'width': width,
+                'fill': '#D8D8D8', 
+                'opacity': 0.9,
+                'transform': 'translate(' + xLocation + ',' + yLocation + ')',
+                'class': tooltipClass
+            });
+    }
+    
+    var removePopup = function(tooltipClass){
+        d3.selectAll(tooltipClass).remove();   
+    }
+    
+
+var checkForPopups = function() {
+    console.log(minDatasetYear + ", " + maxDatasetYear);
+    if(minDatasetYear > 1985 && maxDatasetYear < 1996) {
+        removePopup(".tooltip1");  
+        createPopup("War in Rwanda", "tooltip1", 70, 782, 365);     
+    }
+    else {
+        removePopup(".tooltip1");   
+    }
+}
+
     
 
 }); //.csv
