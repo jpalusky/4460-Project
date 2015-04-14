@@ -4,6 +4,38 @@
     <title>Team World Life</title>
     <style>
         /*CSS STYLES*/
+        @font-face {
+            font-family: "Telegrafico";
+            src: url("Telegrafico.ttf");
+        }
+
+        body {
+            background-color: #ffffff;
+            margin:0;
+            padding: 0px;
+        }
+
+        .top-banner {
+            position: fixed;
+            background: #2c3e50;
+            text-align: center;
+            display: block;
+            color: #ffffff;
+            font-size: 25px;
+            height:30px;
+            width: 100%;
+            padding:2px;
+            z-index: 5;
+        }
+
+        .top-banner a {
+            font-family: "Telegrafico", sans-serif;
+            color:#ffffff;
+            cursor: pointer;
+            text-decoration:none;
+            letter-spacing: 4px;
+            font-weight: bold;
+        }
         
         /* Path and line styling to make the axis look nicer */
         .line {
@@ -63,6 +95,10 @@
     <script src="datamaps.world.min.js"></script>
     <script src="zoompan.js"></script>
     
+    <div class="top-banner">
+        <a href="index.html">World Map Data</a>
+    </div>
+    
     <!-- Div for cholopleth map -->
     <div id="basic_choropleth" style="position: relative; width: 1400px; height:600px; margin: 0 auto;"></div>
 
@@ -85,12 +121,31 @@
     
 <!-- D3 and Javascript portion -->
 <script>
+
+
+var lifeDataDataset = {
+    initialMinDatasetYear: 1960,
+    initialMaxDatasetYear: 2012,
+    colorMin: -1.0,
+    colorMax: 1.0
+}
+
+var allDatasets = [];
+    
+allDatasets.push(lifeDataDataset);
+    
 //Input the csv, calling it "dataset"
 d3.csv("LifeData.csv", function(error, dataset) {
     
+    /*
+     dataset.forEach(function(row) {
+        console.log(Object.keys(row));
+    });
+    */
+    
     //To do: calculate first and last year fields with javascript or d3
-    var initialMinDatasetYear = 1960;
-    var initialMaxDatasetYear = 2012;
+    var initialMinDatasetYear = allDatasets[0].initialMinDatasetYear;
+    var initialMaxDatasetYear = allDatasets[0].initialMaxDatasetYear;
     var minDatasetYear = 1960;
     var maxDatasetYear = 2012;
     var currentCountry;
@@ -145,11 +200,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     //Details on demand settings
                     var tooltipOutput;
                     dataset.forEach(function(d, i){
-                        if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", ""))
-                        {
+                        if(geography.id.replace(" ", "") == d["Country Code"].replace(" ", "")) {
                             var lifeExpectMin = (d[minDatasetYear + ""]).toFixed(2);
                             var lifeExpectMax = (d[maxDatasetYear + ""]).toFixed(2);
-                            var slope = (((d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear))*(100)).toFixed(2);
+                            var slope = ((d[maxDatasetYear + ""] - d[minDatasetYear + ""])/(maxDatasetYear-minDatasetYear)).toFixed(2);
                             if(isNaN(lifeExpectMin) || lifeExpectMin <= 0){
                                 lifeExpectMin = "N/A";  
                             }
@@ -163,7 +217,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
                                             + geography.properties.name + '<br>'
                                             + minDatasetYear + ' data value: ' + lifeExpectMin + '<br>'
                                             + maxDatasetYear + ' data value: ' + lifeExpectMax + '<br>'
-                                            + 'Change: ' + slope + "%";           
+                                            + 'Slope: ' + slope;           
                         }
                     });
                     return tooltipOutput;
@@ -173,7 +227,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         done: function(datamap) { //On country click
             datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
                 currentCountry = geography.id;
-                countryClick(geography.id, true); //Boolean input "true" removes old graph
+                countryClick(currentCountry, true); //Boolean input "true" removes old graph
               });
         },
     });
@@ -215,14 +269,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
         beforePan: beforePan
     });
     
-    
-    //Initial variables for min and max of the dataSet for choropleth colors
-    var minLife = 100;
-    var maxLife = 0;
-    var year = 2000;
-    
     dataset.forEach(function(d) {
-        for(var j = 1960; j <= 2014; j++)
+        for(var j = initialMinDatasetYear; j <= initialMaxDatasetYear; j++)
         {
             //Plus sign turns data values at years into numbers.
             d[j + ""] = +d[j + ""]; //Turn year to string so that d3 understands it
@@ -253,41 +301,26 @@ d3.csv("LifeData.csv", function(error, dataset) {
             while(true)
             {
                 if(maxDatasetYear < initialMaxDatasetYear){
+                    /*
                     minDatasetYear++;
                     maxDatasetYear++;
                     $("#slider").rangeSlider("option", "bounds", {min: minDatasetYear, max: maxDatasetYear});
                     //$("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
+                    */
                 }
                 else{
                     break;   
-                }
-                
+                }   
             }
-            /*
-            d3.select("#zeroMedals").attr("style", "color: black");
-            createPies("All");
-            var defaultSelect = d3.select("#defaultSelect");
-            defaultSelect.attr("selected", "selected");
-            */
         });
     
-    //Find min and max from the dataset
-     dataset.forEach(function(d) {
-         for(var j = year; j < 2012; j++) {
-        
-             if(d[j + ""] > 0 && d[j + ""] < minLife) {
-                 minLife = d[j + ""];
-             }
-            
-             if(d[j + ""] > maxLife) {
-                 maxLife = d[j + ""];
-             }
-         }
-     });
-    
-    var colorScale = d3.scale.linear()
-        .domain([minLife, 0, maxLife])
-        .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
+    //Create the scale for the choropleth
+    var colorScale2 = d3.scale.linear()
+    //NOTE: Un-comment the .domain below to have the colorscale that takes the actual year differences.
+    //.domain([choroplethDifMin, 0, choroplethDifMax]) //This would have to be inside of create gradient.
+    .domain([allDatasets[0].colorMin, 0, allDatasets[0].colorMax])
+    .clamp(true)
+    .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
     
     var createGradient = function(minChange, maxChange){
         //Create linear gradient below map (this is a bit of a process)
@@ -310,17 +343,17 @@ d3.csv("LifeData.csv", function(error, dataset) {
         linearGrad.append("stop") //Tell where to start the gardient (min)
                 .attr({
                     offset: "0%",
-                    style: "stop-color:" + colorScale(minChange) + "; stop-opacity:1",
+                    style: "stop-color:" + colorScale2(minChange) + "; stop-opacity:1",
                 });
         linearGrad.append("stop") //Tell where to start the gardient (min)
                 .attr({
                     offset: "15%",
-                    style: "stop-color:" + colorScale(0) + "; stop-opacity:1",
+                    style: "stop-color:" + colorScale2(0) + "; stop-opacity:1",
                 });
         linearGrad.append("stop") //Tell where to end the gradient (max)
                 .attr({
                     offset: "100%",
-                    style: "stop-color:" + colorScale(maxChange)+ ";stop-opacity:1",
+                    style: "stop-color:" + colorScale2(maxChange)+ ";stop-opacity:1",
                 });
         var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
             .attr({
@@ -336,21 +369,21 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 x: 5,
                 fill: "black",
             })
-            .text("Min: " + (minChange*100).toFixed(2) + "%");
+            .text("Min: " + (minChange).toFixed(2));
         gradient.append("text") //Append the text telling the max life
             .attr({
                 y: 20,
                 x: 205,
                 fill: "black",
             })
-            .text("Max: " + (maxChange*100).toFixed(2) + "%");
+            .text("Max: " + (maxChange).toFixed(2));
     }//Create gradient
     
 
     var createChoropleth = function(greatestYear, leastYear) {
         //Find the min and max differences.
-        var choroplethDifMax = 0;
-        var choroplethDifMin = 100;
+        var choroplethDifMax = dataset[0][greatestYear + ""];
+        var choroplethDifMin = dataset[0][greatestYear + ""];
 
         dataset.forEach(function(d){
             if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
@@ -364,15 +397,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 }
             }
          });
-
-        //Create the scale for the choropleth
-        var colorScale2 = d3.scale.linear()
-        //NOTE: Un-comment the .domain below to have the colorscale that takes the actual year differences.
-        //.domain([choroplethDifMin, 0, choroplethDifMax])
-        .domain([-1.0, 0, 1.0])
-        .clamp(true)
-        .range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
-        colorScale = colorScale2;
         
         createGradient(choroplethDifMin, choroplethDifMax);
         
@@ -414,8 +438,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
     
     //Function that runs when you click a country
     var countryClick = function(countryIn, newCountryBoolean) {
-        var dataIndex;
         
+        var dataIndex;
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
         }
@@ -431,6 +455,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             .attr("class", "countryGraph1")
             .attr("style", "margin: 0 auto;"); //Shift the line chart
     
+
         //Kind of mudane way of finding which data index is currently selected (based on the country name)
         dataset.forEach(function(d, i) {
             if(d["Country Code"] == countryIn){
@@ -445,7 +470,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
                     .attr("fill", "black");
                     return;
             }
-        
         });
             
         //Find min value from the dataset
@@ -524,7 +548,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             canvas.append("text")
                 .attr("y", 20)
                 .attr("x", 20)
-                .text("Slope (% change) = " + slope.toFixed(2))
+                .text("Slope = " + slope.toFixed(2))
                 //.text(dataset[dataIndex]["Country Name"] + ", Slope = " + slope.toFixed(2))
                 .attr("fill", "black")
                 .attr("class", "slopeText");
