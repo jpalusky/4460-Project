@@ -148,6 +148,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var initialMaxDatasetYear = allDatasets[0].initialMaxDatasetYear;
     var minDatasetYear = 1960;
     var maxDatasetYear = 2012;
+
+    //Create width, height, and padding for the line charts
+    var w = 1400;
+    var h = 300;
+    var padding = 50;
     var currentCountry;
     var countryName = [];
     
@@ -155,6 +160,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     var yScale = d3.scale.linear();
     var xAxis = d3.svg.axis();
     var yAxis = d3.svg.axis();
+    var yAxis2 = d3.svg.axis();
 
 
     var line = d3.svg.line()
@@ -162,8 +168,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .x(function(d, i) { return xScale(+d.key); })
                 .y(function(d, i) { return yScale(+d['value']); });
 
-    var lineGraphs = [];
-    var newGraphOffset = 0;
+    var line2 = d3.svg.line()
+                .defined(function(d,i) { return d['value'] > 0; })
+                .x(function(d, i) { return xScale(+d.key); })
+                .y(function(d, i) { return yScale(+d['value']); });
 
     //Create the slider
     $("#slider").rangeSlider({
@@ -178,7 +186,21 @@ d3.csv("LifeData.csv", function(error, dataset) {
         maxDatasetYear = Math.round(data.values.max);
         // main.select('.main.axis.month').call(x1MonthAxis);
         xScale.domain([minDatasetYear, maxDatasetYear]);
+        createChoropleth(minDatasetYear, maxDatasetYear);
         
+        //This adds annotations about the world
+        checkForPopups();
+        
+        //This refreshes the line graph
+        countryClick(currentCountry, true);
+    });
+
+    //Change variables on slider change
+    $("#slider").on("valuesChanged", function(e, data){
+        minDatasetYear = Math.round(data.values.min);
+        maxDatasetYear = Math.round(data.values.max);
+        // main.select('.main.axis.month').call(x1MonthAxis);
+        xScale.domain([minDatasetYear, maxDatasetYear]);
         createChoropleth(minDatasetYear, maxDatasetYear);
         
         //This adds annotations about the world
@@ -231,6 +253,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
               });
         },
     });
+
+    calcSlope = function(x1, x2, y1, y2){
+        return (x2 - x1)/(y2 - y1);
+    }
     
     
     
@@ -298,21 +324,30 @@ d3.csv("LifeData.csv", function(error, dataset) {
     //Button stuff
         var myButton = d3.select("#button");
         myButton.on("click", function(){
-            while(true)
-            {
-                if(maxDatasetYear < initialMaxDatasetYear){
-                    /*
-                    minDatasetYear++;
-                    maxDatasetYear++;
-                    $("#slider").rangeSlider("option", "bounds", {min: minDatasetYear, max: maxDatasetYear});
-                    //$("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
-                    */
-                }
-                else{
-                    break;   
-                }   
-            }
+            setInterval(animateSlider, 400)
+            // var finished = false;
+            
+            // while(!finished)
+            // {
+            // }
+            /*
+            d3.select("#zeroMedals").attr("style", "color: black");
+            createPies("All");
+            var defaultSelect = d3.select("#defaultSelect");
+            defaultSelect.attr("selected", "selected");
+            */
         });
+
+    var animateSlider = function(){
+        if(maxDatasetYear < initialMaxDatasetYear){
+            minDatasetYear++;
+            maxDatasetYear++;
+            $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
+        }
+        else{
+            clearInterval("animateSlider");
+        }
+    }
     
     //Create the scale for the choropleth
     var colorScale2 = d3.scale.linear()
@@ -416,11 +451,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
     }
     createChoropleth(minDatasetYear, maxDatasetYear);
     
-    //Create width, height, and padding for the line charts
-    var w = 1400;
-    var h = 300;
-    var padding = 50;
-    
     //Line chart year scaling
     xScale = d3.scale.linear()
         .domain([minDatasetYear, maxDatasetYear])
@@ -446,7 +476,6 @@ d3.csv("LifeData.csv", function(error, dataset) {
         
         //Set the country drop down
         $('#dropDown').val(countryIn);
-             
         //Create a new canvas svg element, with class of countryGraph1
         var canvas = d3.select("body")
             .append("svg")
@@ -617,7 +646,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
     
 
 var checkForPopups = function() {
-    console.log(minDatasetYear + ", " + maxDatasetYear);
+    // console.log(minDatasetYear + ", " + maxDatasetYear);
     if(minDatasetYear > 1985 && maxDatasetYear < 1996) {
         removePopup(".tooltip1");  
         createPopup("War in Rwanda", "tooltip1", 70, 782, 365);     
@@ -626,15 +655,9 @@ var checkForPopups = function() {
         removePopup(".tooltip1");   
     }
 }
-
     
 
 }); //.csv
-    
-
-calcSlope = function(x1, x2, y1, y2){
-    return (x2 - x1)/(y2 - y1);
-}
 
 </script>
     
