@@ -172,7 +172,8 @@ var lifeDataDataset = {
     initialMinDatasetYear: 1960,
     initialMaxDatasetYear: 2012,
     colorMin: -1.0,
-    colorMax: 1.0
+    colorMax: 1.0,
+    initialGraphMin: 100,
 }
 
 var allDatasets = [];
@@ -429,7 +430,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 });
         linearGrad.append("stop") //Tell where to start the gardient (min)
                 .attr({
-                    offset: "15%",
+                    offset: "50%",
                     style: "stop-color:" + colorScale2(0) + "; stop-opacity:1",
                 });
         linearGrad.append("stop") //Tell where to end the gradient (max)
@@ -451,23 +452,26 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 x: 5,
                 fill: "black",
             })
-            .text("Min: " + (minChange).toFixed(2));
+            .text("Slope: " + (minChange).toFixed(1));
         gradient.append("text") //Append the text telling the max life
             .attr({
                 y: 20,
-                x: 205,
+                x: 225,
                 fill: "black",
             })
-            .text("Max: " + (maxChange).toFixed(2));
+            .text("Slope: " + (maxChange).toFixed(1));
     }//Create gradient
+    createGradient(lifeDataDataset.colorMin, lifeDataDataset.colorMax)
     
 
     var createChoropleth = function(greatestYear, leastYear) {
+        /*
         //Find the min and max differences.
         var choroplethDifMax = dataset[0][greatestYear + ""];
         var choroplethDifMin = dataset[0][greatestYear + ""];
 
         dataset.forEach(function(d){
+            
             if(!isNaN(d[greatestYear + ""]) && !isNaN(d[leastYear + ""]) && d[greatestYear + ""] > 0 && d[leastYear + ""] > 0)
             {
                 var currentDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
@@ -481,6 +485,9 @@ d3.csv("LifeData.csv", function(error, dataset) {
          });
         
         createGradient(choroplethDifMin, choroplethDifMax);
+        */
+        
+        
         
         //Color the choropleth
         dataset.forEach(function(d){
@@ -516,6 +523,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
     //Function that runs when you click a country
     var countryClick = function(countryIn, newCountryBoolean) {
         
+        if(currentCountry == undefined){
+            return;   
+        }
+        
         var dataIndex;
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
@@ -550,17 +561,18 @@ d3.csv("LifeData.csv", function(error, dataset) {
             
         //Find min value from the dataset
         //NOTE: change initiammindatasetyear to mindataset year if you want y axis to dynamically scale
-        var minValue = 100;
+        var minValue = lifeDataDataset.initialGraphMin;
+
         for(var j = initialMinDatasetYear; j < initialMaxDatasetYear; j++) {
-        
             if(dataset[dataIndex][j + ""] > 0 && dataset[dataIndex][j + ""] < minValue)
             {
                 minValue = dataset[dataIndex][j + ""]; //If smaller value than current, select the data item at the clicked index
             }
         }
+
         
         //Set the yScale based on the datapoints
-        if( minValue < 100 && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
+        if(minValue < lifeDataDataset.initialGraphMin && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
             yScale = d3.scale.linear() 
             .domain([minValue - 1, d3.max(d3.values(dataset[dataIndex]))])
             .range([h - padding, padding]); //Range is the size of the chart
