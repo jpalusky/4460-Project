@@ -22,6 +22,9 @@
             -ms-transition: all 0.5s ease;
             transition: all 0.5s ease;
             cursor: pointer;
+            margin-top: -10px;
+            position: relative;
+            z-index: 10px;
         }
         .play_border:hover{
             border-color: transparent;
@@ -46,6 +49,8 @@
             border-top: 10px solid transparent;
             border-bottom: 10px solid transparent;
             border-left: 10px solid rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 10px;
         }
         
         @font-face {
@@ -119,6 +124,24 @@
             text-align: center;
             color: rgba(0,0,0,0.6);
         }
+        
+        #basic_choropleth {
+            position: relative; 
+            width: 1400px; 
+            height: 600px; 
+            margin: 0 auto;   
+        }
+        
+        #exitGraph {
+            float: right;
+            margin-top: 80px;
+            margin-left: 1260px;
+            position: absolute;
+        }
+        
+        #exitGraph.hidden {
+            display: none;
+        }
  
     </style>
     
@@ -144,16 +167,21 @@
     </div>
     
     <!-- Div for cholopleth map -->
-    <div id="basic_choropleth" style="position: relative; width: 1400px; height:600px; margin: 0 auto;"></div>
+    <div id="basic_choropleth"></div>
 
     
     <!-- Slider -->
     <div id="slider-container">
-        <div class="play_border" id="button" style="float:left;">
+        <div class="play_border" id="button" style="float:left; background-color: white;">
             <div type="button" class="play_button"></div>
         </div>
         <div id="slider" style="width: 1340px; margin-left: 70px;"></div>
     </div>
+    
+    <!-- Exit button -->
+    <button type="button" id="exitGraph" class="hidden">
+        X
+    </button>
     
     <br>
     
@@ -241,8 +269,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
         //This adds annotations about the world
         checkForPopups();
         
-        //This refreshes the line graph
-        countryClick(currentCountry, true);
+        //If there is a line graph already, then 
+        if ($(".countryGraph1")[0]){
+            //This refreshes the line graph
+            countryClick(currentCountry, true);
+        }
     });
 
     //Change variables on slider change
@@ -256,8 +287,11 @@ d3.csv("LifeData.csv", function(error, dataset) {
         //This adds annotations about the world
         checkForPopups();
         
-        //This refreshes the line graph
-        countryClick(currentCountry, true);
+        //If there is a line graph already, then 
+        if ($(".countryGraph1")[0]){
+            //This refreshes the line graph
+            countryClick(currentCountry, true);
+        }
     });
     
     //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
@@ -309,41 +343,44 @@ d3.csv("LifeData.csv", function(error, dataset) {
     }
     
     
-    
-    //Zoom and pan
-    var beforePan;
+    var zoomPanSetup = function(gutterW, gutterH) {
+        //Zoom and pan
+        var beforePan;
 
-    beforePan = function(oldPan, newPan){
-      var stopHorizontal = false
-        , stopVertical = false
-        , gutterWidth = 1300
-        , gutterHeight = 500
-          // Computed variables
-        , sizes = this.getSizes()
-        , leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth
-        , rightLimit = sizes.width - gutterWidth - (sizes.viewBox.x * sizes.realZoom)
-        , topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + gutterHeight
-        , bottomLimit = sizes.height - gutterHeight - (sizes.viewBox.y * sizes.realZoom)
+        beforePan = function(oldPan, newPan){
+          var stopHorizontal = false
+            , stopVertical = false
+            , gutterWidth = gutterW
+            , gutterHeight = gutterH
+              // Computed variables
+            , sizes = this.getSizes()
+            , leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth
+            , rightLimit = sizes.width - gutterWidth - (sizes.viewBox.x * sizes.realZoom)
+            , topLimit = -((sizes.viewBox.y + sizes.viewBox.height) * sizes.realZoom) + gutterHeight
+            , bottomLimit = sizes.height - gutterHeight*(1.65) - (sizes.viewBox.y * sizes.realZoom)
 
-      customPan = {}
-      customPan.x = Math.max(leftLimit, Math.min(rightLimit, newPan.x))
-      customPan.y = Math.max(topLimit, Math.min(bottomLimit, newPan.y))
+          customPan = {}
+          customPan.x = Math.max(leftLimit, Math.min(rightLimit, newPan.x))
+          customPan.y = Math.max(topLimit, Math.min(bottomLimit, newPan.y))
 
-      return customPan;
+          return customPan;
+        }
+
+        var mapsvg = document.querySelector(".datamap");
+        var panZoom = svgPanZoom(mapsvg, {
+            mouseWheelZoomEnabled: false,
+            zoomEnabled: true,
+            controlIconsEnabled: true,
+            fit: true,
+            center: true,
+            zoomScaleSensitivity: 0.5,
+            minZoom: 1,
+            maxZoom: 3,
+            beforePan: beforePan
+        });
     }
-
-    var mapsvg = document.querySelector(".datamap");
-    var panZoom = svgPanZoom(mapsvg, {
-        mouseWheelZoomEnabled: false,
-        zoomEnabled: true,
-        controlIconsEnabled: true,
-        fit: true,
-        center: true,
-        zoomScaleSensitivity: 0.5,
-        minZoom: 1,
-        maxZoom: 3,
-        beforePan: beforePan
-    });
+    zoomPanSetup(1300,330);
+    
     
     dataset.forEach(function(d) {
         for(var j = initialMinDatasetYear; j <= initialMaxDatasetYear; j++)
@@ -409,6 +446,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         //Create linear gradient below map (this is a bit of a process)
         var gradient = d3.select("#basic_choropleth").selectAll("svg")
                 .append("svg:g") //Put the gradient in a g element inside of the svg
+                .attr("id", "dataGradient")
                 .attr("width", "400")
                 .attr("height", "50")
                 .attr("transform", "translate(40, 500)"); //Put the gradient at the bottom of the map
@@ -461,7 +499,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             })
             .text("Slope: " + (maxChange).toFixed(1));
     }//Create gradient
-    createGradient(lifeDataDataset.colorMin, lifeDataDataset.colorMax)
+    createGradient(allDatasets[0].colorMin, allDatasets[0].colorMax)
     
 
     var createChoropleth = function(greatestYear, leastYear) {
@@ -510,6 +548,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .domain([minDatasetYear, maxDatasetYear])
         .range([padding, w - padding]);
     
+    /*
     //Create blank space
     var canvas = d3.select("body")
         .append("svg")
@@ -517,8 +556,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .attr("height", h)
         .attr("class", "countryGraph1")
         .attr("style", "margin: 0 auto;"); //Shift the line chart
-
-    
+    */
     
     //Function that runs when you click a country
     var countryClick = function(countryIn, newCountryBoolean) {
@@ -526,6 +564,13 @@ d3.csv("LifeData.csv", function(error, dataset) {
         if(currentCountry == undefined){
             return;   
         }
+        
+        d3.select(".datamap").attr("style", "height: 350px;");
+        d3.select("#basic_choropleth").attr("style", "height: 350px;");
+        d3.select("#svg-pan-zoom-controls").attr("transform", "translate(1340 250) scale(0.75)");
+        d3.select("#exitGraph").classed("hidden", false);
+        d3.select("#dataGradient").attr("transform", "translate(40, 290)");
+        //zoomPanSetup(100,100);
         
         var dataIndex;
         if(newCountryBoolean == true) {
@@ -561,7 +606,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             
         //Find min value from the dataset
         //NOTE: change initiammindatasetyear to mindataset year if you want y axis to dynamically scale
-        var minValue = lifeDataDataset.initialGraphMin;
+        var minValue = allDatasets[0].initialGraphMin;
 
         for(var j = initialMinDatasetYear; j < initialMaxDatasetYear; j++) {
             if(dataset[dataIndex][j + ""] > 0 && dataset[dataIndex][j + ""] < minValue)
@@ -572,7 +617,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
 
         
         //Set the yScale based on the datapoints
-        if(minValue < lifeDataDataset.initialGraphMin && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
+        if(minValue < allDatasets[0].initialGraphMin && !isNaN(d3.max(d3.values(dataset[dataIndex]))) ) {
             yScale = d3.scale.linear() 
             .domain([minValue - 1, d3.max(d3.values(dataset[dataIndex]))])
             .range([h - padding, padding]); //Range is the size of the chart
@@ -662,6 +707,23 @@ d3.csv("LifeData.csv", function(error, dataset) {
                 .attr("id","chartLine")
                 .attr("d", line);
     } //countryClick()
+    
+    
+    
+    //X button for graphs
+    var exitButton = d3.select("#exitGraph");
+    exitButton.on("click", function(){
+        //zoomPanSetup(1300,500);
+        $('#dropDown').val("All");
+        d3.select(".datamap").attr("style", "height: 600px;");
+        d3.select("#basic_choropleth").attr("style", "height: 600px;");
+        d3.select("#svg-pan-zoom-controls").attr("transform", "translate(1340 500) scale(0.75)");
+        d3.select("#exitGraph").classed("hidden", true);
+        d3.select("#dataGradient").attr("transform", "translate(40, 500)");
+        
+        d3.selectAll(".countryGraph1").remove();
+    });
+    
     
     
     var createPopup = function(textInput, tooltipClass, width, xLocation, yLocation) {
