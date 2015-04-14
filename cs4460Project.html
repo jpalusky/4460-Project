@@ -315,6 +315,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
         .attr("value", function (d, i) { return d[1]});
 
     dropDown.on("change", menuChanged);
+
     function menuChanged() { 
         var selectedValue = d3.event.target.value;
         currentCountry = selectedValue;
@@ -322,9 +323,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
     }
     
     //Button stuff
+    var interval;
         var myButton = d3.select("#button");
         myButton.on("click", function(){
-            setInterval(animateSlider, 400)
+            interval = setInterval(animateSlider, 400)
             // var finished = false;
             
             // while(!finished)
@@ -345,7 +347,7 @@ d3.csv("LifeData.csv", function(error, dataset) {
             $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
         }
         else{
-            clearInterval("animateSlider");
+            clearInterval(interval);
         }
     }
     
