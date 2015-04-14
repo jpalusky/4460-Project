@@ -70,6 +70,10 @@
     <!-- Slider -->
     <div id="slider" style="width: 1400px; margin: 0 auto;"></div>
     
+    <button type="button" id="button">
+        Animate
+    </button>
+    
     <br>
     
     <p style="float: left; margin-left: 20px;">Country name:</p>
@@ -242,6 +246,30 @@ d3.csv("LifeData.csv", function(error, dataset) {
         currentCountry = selectedValue;
         countryClick(selectedValue, true);
     }
+    
+    //Button stuff
+        var myButton = d3.select("#button");
+        myButton.on("click", function(){
+            while(true)
+            {
+                if(maxDatasetYear < initialMaxDatasetYear){
+                    minDatasetYear++;
+                    maxDatasetYear++;
+                    $("#slider").rangeSlider("option", "bounds", {min: minDatasetYear, max: maxDatasetYear});
+                    //$("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
+                }
+                else{
+                    break;   
+                }
+                
+            }
+            /*
+            d3.select("#zeroMedals").attr("style", "color: black");
+            createPies("All");
+            var defaultSelect = d3.select("#defaultSelect");
+            defaultSelect.attr("selected", "selected");
+            */
+        });
     
     //Find min and max from the dataset
      dataset.forEach(function(d) {
