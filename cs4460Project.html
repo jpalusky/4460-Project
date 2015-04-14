@@ -4,6 +4,50 @@
     <title>Team World Life</title>
     <style>
         /*CSS STYLES*/
+        
+        .play_border {
+            margin-left:15px;
+            border: 2px solid rgba(0,0,0,0.7);
+            -webkit-border-radius: 100%;
+            -moz-border-radius: 100%;
+            border-radius: 100%;
+            width: 40px;
+            height: 40px;
+            -webkit-box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+            -moz-box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+            -webkit-transition: all 0.5s ease;
+            -moz-transition: all 0.5s ease;
+            -o-transition: all 0.5s ease;
+            -ms-transition: all 0.5s ease;
+            transition: all 0.5s ease;
+            cursor: pointer;
+        }
+        .play_border:hover{
+            border-color: transparent;
+            -webkit-box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+            -moz-box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.1);
+        }
+        .play_border:hover .play_button{
+            border-left: 10px solid rgba(0,0,0,0.5);
+        }
+        .play_border:active,.play_border:focus{
+            -webkit-box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.2);
+            -moz-box-shadow: 0px 0px 5.play_button:hoverpx 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.2);
+        }
+        .play_button {
+            position:relative;
+            top: 10px;
+            left: 40%;
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 10px solid rgba(0,0,0,0.8);
+        }
+        
         @font-face {
             font-family: "Telegrafico";
             src: url("Telegrafico.ttf");
@@ -96,7 +140,7 @@
     <script src="zoompan.js"></script>
     
     <div class="top-banner">
-        <a href="index.html">World Map Data</a>
+        <a href="cs4460Project.html">World Map Data</a>
     </div>
     
     <!-- Div for cholopleth map -->
@@ -104,11 +148,12 @@
 
     
     <!-- Slider -->
-    <div id="slider" style="width: 1400px; margin: 0 auto;"></div>
-    
-    <button type="button" id="button">
-        Animate
-    </button>
+    <div id="slider-container">
+        <div class="play_border" id="button" style="float:left;">
+            <div type="button" class="play_button"></div>
+        </div>
+        <div id="slider" style="width: 1340px; margin-left: 70px;"></div>
+    </div>
     
     <br>
     
@@ -182,6 +227,10 @@ d3.csv("LifeData.csv", function(error, dataset) {
     
     //Change variables on slider change
     $("#slider").on("valuesChanging", function(e, data){
+        //Stop animation
+        clearInterval(interval);
+        animating = false;   
+        
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
         // main.select('.main.axis.month').call(x1MonthAxis);
@@ -322,22 +371,19 @@ d3.csv("LifeData.csv", function(error, dataset) {
     }
     
     //Button stuff
+    var animating = false;
+    var interval;
         var myButton = d3.select("#button");
         myButton.on("click", function(){
-            setInterval(animateSlider, 400)
-            // var finished = false;
-            
-            // while(!finished)
-            // {
-            // }
-            /*
-            d3.select("#zeroMedals").attr("style", "color: black");
-            createPies("All");
-            var defaultSelect = d3.select("#defaultSelect");
-            defaultSelect.attr("selected", "selected");
-            */
+            if(!animating) {
+                animating = true;
+                interval = setInterval(animateSlider, 300);
+            }
+            else {
+                clearInterval(interval);
+                animating = false;   
+            }
         });
-
     var animateSlider = function(){
         if(maxDatasetYear < initialMaxDatasetYear){
             minDatasetYear++;
@@ -345,7 +391,8 @@ d3.csv("LifeData.csv", function(error, dataset) {
             $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
         }
         else{
-            clearInterval("animateSlider");
+            clearInterval(interval);
+            animating = false;   
         }
     }
     
