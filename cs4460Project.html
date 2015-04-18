@@ -1,3 +1,5 @@
+<!-- Note: Code that has not been identified as having been imported has been written from scratch.  -->
+
 <!DOCTYPE html>
 <head>
     <link rel="icon" href="globe.ico" type="image/x-icon" >
@@ -5,6 +7,8 @@
     <title>Team World Life</title>
     <style>
         /*CSS STYLES*/
+        /*CSS for play button imported and motified. Other CSS written from scratch*/
+        
         
         .play_border {
             margin-left:15px;
@@ -194,7 +198,7 @@
  
     </style>
     
-    <!-- Slider stuff -->
+    <!-- Stylesheets and javascript for JQRangeSlider, used to select years. CSS heavily modified. -->
     <link rel="stylesheet" id="themeCSS" href="iThing.css"> 
 	<link rel="stylesheet" href="style.css">
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
@@ -205,16 +209,17 @@
 </head>
 
 <body>
-    <!-- D3, topojson, and datamaps -->
+    <!-- D3, topojson (for datamaps), datamaps, and zoompan.js (for zooming). -->
+    <!-- All used as is, minor modifications to datamaps.world.min.js -->
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="topojson.js"></script>
     <script src="datamaps.world.min.js"></script>
     <script src="zoompan.js"></script>
     
+    <!-- Top banner. Written from scratch. -->
     <div class="top-banner">
         <a href="cs4460Project.html">World % Change Data</a>
-        <!-- Dataset drop down -->
-        <!--<div style="position: absolute; top:30px; z-index: 1;"> -->
+        <!-- Dataset drop down. Written from scratch. -->
         <div style="width: 280px; margin: auto; margin-top: -7px; ">
         <p style="float: left; margin-left: 20px; font-size: 15px; font-family: Century Gothic, sans-serif;">Dataset:</p>
         <select name="datsetList" id="dataDropDown">
@@ -227,13 +232,14 @@
         </div>
     </div>
     
-    <!-- Radio scale Y -->
+    <!-- Radio to turn annotations on or off. -->
     <form action="" id="annotationsRadio" style="height: 35px;">
         Annotations:
         <input type="radio" name="radio" value="on" checked="checked">On</input>
         <input type="radio" name="radio" value="off">Off</input>
     <br>
-        <div style="display: inline-block; width: 12px; height: 12px; background: rgb(160, 160, 160); border-radius: 2px;"></div> <p style="display: inline-block;">Gray indicates insufficient data</p>
+        <div style="display: inline-block; width: 12px; height: 12px; background: rgb(160, 160, 160); border-radius: 2px;"></div> 
+        <p style="display: inline-block;">Gray indicates insufficient data</p>
     </form>
     
     <div style="padding-top:35px;"></div>
@@ -249,7 +255,7 @@
         <div id="slider" style="width: 1340px; margin-left: 70px;"></div>
     </div>
     
-    <!-- Clear button -->
+    <!-- Clear button. -->
     <button type="button" id="clearGraph" class="hidden">
         Clear
     </button>
@@ -268,8 +274,8 @@
     
     <br>
     
-    <p style="float: left; margin-left: 20px;">Add countries (5 Max) via map or dropdown:</p>
     <!-- Country dropdown bar --->
+    <p style="float: left; margin-left: 20px;">Add countries (5 Max) via map or dropdown:</p>
     <select name="countryList" id="dropDown">
         <option value="All" id="defaultSelect">Select a country</option>
     </select>
@@ -277,7 +283,8 @@
     
 <!-- D3 and Javascript portion -->
 <script>
-
+    
+    //Hard-coded parameters for each dataset. Written from scratch.
     var lifeDataDataset = {
         name: "LifeData.csv",
         initialMinDatasetYear: 1960,
@@ -338,9 +345,11 @@
         toFixed: 0,
     }
 
-
+    //Global variables to hold datasets
     var allDatasets = [];
     var currentDataset = 0;
+    
+    //Checking status of radio buttons
     var yScaleBoolean = false;
     var annotationsBoolean = true;
     
@@ -349,7 +358,8 @@
     allDatasets.push(unemploymentDataset);
     allDatasets.push(populationDataset);
     allDatasets.push(internetUsersDataset);
-
+    
+    //Reset vis on drop down change. Written from scratch.
     var dataDropDown = d3.select("#dataDropDown");
     dataDropDown.on("change", menuChanged);
     function menuChanged() { 
@@ -370,22 +380,24 @@
         console.log(currentDataset);
         switchData(allDatasets[currentDataset]);
     }
-    
+
+//Primary function that contains the vis, called each time the datasets are updated. Written from scratch.
 var switchData = function(datasetObject) {
     
 //Input the csv, calling it "dataset"
 d3.csv(datasetObject.name, function(error, dataset) {
     
-    //To do: calculate first and last year fields with javascript or d3
     var initialMinDatasetYear = datasetObject.initialMinDatasetYear;
     var initialMaxDatasetYear = datasetObject.initialMaxDatasetYear;
     var minDatasetYear = initialMinDatasetYear;
     var maxDatasetYear = initialMaxDatasetYear;
 
-    //Create width, height, and padding for the line charts
+    //Line chart width, height, and padding
     var w = 1450;
     var h = 280;
     var padding = 50;
+    
+    //Variable to keep track of the last country selected, and an array to populate the country dropdown
     var currentCountry;
     var countryName = [];
     
@@ -395,68 +407,64 @@ d3.csv(datasetObject.name, function(error, dataset) {
     var yAxis = d3.svg.axis();
     var yAxis2 = d3.svg.axis();
 
-
+    //Varible for when lines are created in the line chart.
     var line = d3.svg.line()
                 .defined(function(d,i) { return d['value'] > 0; })
                 .x(function(d, i) { return xScale(+d.key); })
                 .y(function(d, i) { return yScale(+d['value']); });
 
-    var line2 = d3.svg.line()
-                .defined(function(d,i) { return d['value'] > 0; })
-                .x(function(d, i) { return xScale(+d.key); })
-                .y(function(d, i) { return yScale(+d['value']); });
-
-    //Create the slider
+    
+    //Create the JQRangeSlider. Options written from scratch.
     $("#slider").rangeSlider({
         bounds:{min: minDatasetYear, max: maxDatasetYear},
         range: {min: 3, max: maxDatasetYear - minDatasetYear},
         defaultValues:{min: minDatasetYear, max: maxDatasetYear}
     });
     
-    $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1); //Trying to fix the bad data issue
+    //Update slider to fix a datamaps loading error
+    $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1);
     $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
     
-    //Change variables on slider change
+    //Update map, popups, and chart when slider is changing. Written from scratch.
     $("#slider").on("valuesChanging", function(e, data){
-        //Stop animation
+        //Stop animation (if button has been pressed)
         clearInterval(interval);
         animating = false;   
         
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
-        // main.select('.main.axis.month').call(x1MonthAxis);
         xScale.domain([minDatasetYear, maxDatasetYear]);
         createChoropleth(minDatasetYear, maxDatasetYear);
         
-        //This adds annotations about the world
+        //Annotations
         checkForPopups();
         
-        //If there is a line graph already, then 
+        //If there is a line chart already, then 
         if ($(".countryGraph1")[0]){
-            //This refreshes the line graph
+            //This refreshes the line chart
             countryClick(currentCountry, true);
         }
     });
 
-    //Change variables on slider change
+    //Update map, popups, and chart when slider is finished changing. Written from scratch.
     $("#slider").on("valuesChanged", function(e, data){
         minDatasetYear = Math.round(data.values.min);
         maxDatasetYear = Math.round(data.values.max);
-        // main.select('.main.axis.month').call(x1MonthAxis);
         xScale.domain([minDatasetYear, maxDatasetYear]);
         createChoropleth(minDatasetYear, maxDatasetYear);
         
         //This adds annotations about the world
         checkForPopups();
         
-        //If there is a line graph already, then 
+        //If there is a line chart already, then 
         if ($(".countryGraph1")[0]){
-            //This refreshes the line graph
+            //This refreshes the line chart
             countryClick(currentCountry, true);
         }
     });
     
-    //Create a new object from the Datamap plugin, called basic_choropleth (the variable and id have the same name)
+    //Create a new object from the Datamap plugin called basic_choropleth (the variable and id have the same name).
+    //Datamaps plugin imported, options and details on demand written from scratch or heavily modified.
     var basic_choropleth = new Datamap({
         element: document.getElementById("basic_choropleth"),
         geographyConfig: {
@@ -495,24 +503,21 @@ d3.csv(datasetObject.name, function(error, dataset) {
         done: function(datamap) { //On country click
             datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
                 currentCountry = geography.id;
-                if(geography.id != -99 && geography.id != "ESH" && geography.id != "TWN") { //-99 means that a country does not exist
-                    countryClick(currentCountry, true); //Boolean input "true" removes old graph
+                if(geography.id != -99 && geography.id != "ESH" && geography.id != "TWN") { //-99 means that a country does not exist. ESH and TWN don't have data.
+                    countryClick(currentCountry, true); //Boolean input "true" removes old graph, creates new line chart.
                 }
               });
         },
     });
     
-    
+    //Setting up the zoom and pan plugin. Imported and modified from zoompan.js demo code.
     var zoomPanSetup = function(gutterW, gutterH) {
-        //Zoom and pan
         var beforePan;
-
         beforePan = function(oldPan, newPan){
           var stopHorizontal = false
             , stopVertical = false
             , gutterWidth = gutterW
             , gutterHeight = gutterH
-              // Computed variables
             , sizes = this.getSizes()
             , leftLimit = -((sizes.viewBox.x + sizes.viewBox.width) * sizes.realZoom) + gutterWidth
             , rightLimit = sizes.width - gutterWidth - (sizes.viewBox.x * sizes.realZoom)
@@ -539,19 +544,19 @@ d3.csv(datasetObject.name, function(error, dataset) {
             beforePan: beforePan
         });
     }
-    zoomPanSetup(1300,330);
+    zoomPanSetup(1300,330); //Set up zoom and pan
     
-    
+    //Go through that data values and tell D3 to treat them as numbers, not strings. Written from scratch.
     dataset.forEach(function(d) {
         for(var j = initialMinDatasetYear; j <= initialMaxDatasetYear; j++)
         {
             //Plus sign turns data values at years into numbers.
-            d[j + ""] = +d[j + ""]; //Turn year to string so that d3 understands it
+            d[j + ""] = +d[j + ""]; //Turn year to string so that d3 understands it.
         }
-        countryName.push([d["Country Name"], d["Country Code"]]);
+        countryName.push([d["Country Name"], d["Country Code"]]); //Get country names and codes for the country dropdown bar.
     });
     
-    //Country drop down
+    //Set up the country drop down
     var dropDown = d3.select("#dropDown");
     var countrySort = countryName.sort();
     var options = dropDown.selectAll("option")
@@ -561,27 +566,32 @@ d3.csv(datasetObject.name, function(error, dataset) {
         .text(function (d, i) { return d[0] + ": " + d[1]; })
         .attr("value", function (d, i) { return d[1]});
 
+    //When new country is selected.
     dropDown.on("change", menuChanged);
     function menuChanged() { 
-        var selectedValue = d3.event.target.value;
+        var selectedValue = d3.event.target.value; //Get value selected.
         currentCountry = selectedValue;
-        countryClick(selectedValue, true);
+        countryClick(selectedValue, true); //Create line chart.
     }
     
-    //Button stuff
-    var animating = false;
+    //Animation button for the time interval.
+    var animating = false; //initally set animating boolean to false.
     var interval;
-        var myButton = d3.select("#button");
-        myButton.on("click", function(){
-            if(!animating) {
-                animating = true;
-                interval = setInterval(animateSlider, 300);
-            }
-            else {
-                clearInterval(interval);
-                animating = false;   
-            }
-        });
+    var myButton = d3.select("#button"); //Select the play button.
+    
+    //On button clicked. Imported and heavily modified.
+    myButton.on("click", function(){
+        if(!animating) {
+            animating = true;
+            interval = setInterval(animateSlider, 300); //Interval for animation.
+        }
+        else {
+            clearInterval(interval);
+            animating = false;   
+        }
+    });
+    
+    //Function that runs when button is clicked.
     var animateSlider = function(){
         if(maxDatasetYear < initialMaxDatasetYear){
             minDatasetYear++;
@@ -594,19 +604,16 @@ d3.csv(datasetObject.name, function(error, dataset) {
         }
     }
     
-    //Create the scale for the choropleth
-    var colorScale2 = d3.scale.linear()
-    //NOTE: Un-comment the .domain below to have the colorscale that takes the actual year differences.
-    //.domain([choroplethDifMin, 0, choroplethDifMax]) //This would have to be inside of create gradient.
+    //Create choropleth and gradient color scale, from red to green. Written from scratch.
+    var colorScale = d3.scale.linear()
     .domain([datasetObject.colorMin, 0, datasetObject.colorMax])
     .clamp(true)
-    //.range(["#FF4D4D", "white", "rgb(64, 150, 44)"]);//"#40BD28"]);
     .range(["#c35858", "white", "rgb(71, 126, 58)"]);
     
+    //Create the reference gradient in the left hand corner. Imported and heavily modified.
     var createGradient = function(){
-        //Create linear gradient below map (this is a bit of a process)
         var gradient = d3.select("#basic_choropleth").selectAll("svg")
-                .append("svg:g") //Put the gradient in a g element inside of the svg
+                .append("svg:g")
                 .attr("id", "dataGradient")
                 .attr("width", "400")
                 .attr("height", "50")
@@ -622,20 +629,20 @@ d3.csv(datasetObject.name, function(error, dataset) {
                 x2: "100%",
                 y2: "0%",
             });
-        linearGrad.append("stop") //Tell where to start the gardient (min)
+        linearGrad.append("stop") //Tell where to start the gradient (min)
                 .attr({
                     offset: "0%",
-                    style: "stop-color:" + colorScale2(datasetObject.colorMin) + "; stop-opacity:1",
+                    style: "stop-color:" + colorScale(datasetObject.colorMin) + "; stop-opacity:1",
                 });
-        linearGrad.append("stop") //Tell where to start the gardient (min)
+        linearGrad.append("stop") //Tell where to start the gradient (min)
                 .attr({
                     offset: "50%",
-                    style: "stop-color:" + colorScale2(0) + "; stop-opacity:1",
+                    style: "stop-color:" + colorScale(0) + "; stop-opacity:1",
                 });
         linearGrad.append("stop") //Tell where to end the gradient (max)
                 .attr({
                     offset: "100%",
-                    style: "stop-color:" + colorScale2(datasetObject.colorMax)+ ";stop-opacity:1",
+                    style: "stop-color:" + colorScale(datasetObject.colorMax)+ ";stop-opacity:1",
                 });
         var svgGrad = gradient.append("rect") //Create the rectangle holding the gradient
             .attr({
@@ -645,56 +652,53 @@ d3.csv(datasetObject.name, function(error, dataset) {
                     ry: 2,
                     style: "fill:url(#grad1); stroke-width:1; stroke:rgb(60,60,60)" //Fill rectangle with the gradient created
                 });
-        gradient.append("text") //Append the text telling the min life
+        gradient.append("text") //Append the text telling the min % change
             .attr({
                 y: 20,
                 x: 5,
                 fill: "black",
             })
             .text((datasetObject.colorMin).toFixed(1) + " %/year");
-        gradient.append("text") //Append the text telling the max life
+        gradient.append("text") //Append the text telling the max % change
             .attr({
                 y: 20,
                 x: 215,
                 fill: "black",
             })
             .text((datasetObject.colorMax).toFixed(1) + " %/year");
-    }//Create gradient
+    } //Create gradient
     createGradient();
     
-
+    //Update the choropleth with new slider values.
     var createChoropleth = function() {
         
-        //Color the choropleth
+        //Color the choropleth. Written from scratch.
         dataset.forEach(function(d){
             var newColor = {};
             if(!isNaN(d[maxDatasetYear + ""]) && !isNaN(d[minDatasetYear + ""]) && d[maxDatasetYear + ""] > 0 && d[minDatasetYear + ""] > 0){
                 var yearDif = ((((d[maxDatasetYear + ""] - d[minDatasetYear + ""])/d[maxDatasetYear + ""])/(maxDatasetYear-minDatasetYear))*100).toFixed(2);
-                //var yearDif = (((d[greatestYear + ""] - d[leastYear + ""])/d[greatestYear + ""])/(greatestYear-leastYear))*100;
-                //var yearDif = (d[greatestYear + ""] - d[leastYear + ""])/(greatestYear - leastYear);
-                //Not quite sure why this works. Is this an object?
-                newColor[d["Country Code"]] = colorScale2(yearDif); //Puts a single item array into the newColor variable?
+                newColor[d["Country Code"]] = colorScale(yearDif);
             }
             else{
                 newColor[d["Country Code"]] = "rgb(160, 160, 160)";
             }
-            basic_choropleth.updateChoropleth(newColor); //update choropleth with the object?
+            basic_choropleth.updateChoropleth(newColor); //Update choropleth
         });
     }
     createChoropleth();
     
-    //Line chart year scaling
+    //Set up xScale for line chart.
     xScale = d3.scale.linear()
         .domain([minDatasetYear, maxDatasetYear])
         .range([padding, w - padding]);
     
-    //Function that runs when you click a country
     var currentCountriesArray = [];
     var lineColors = ["#3e3636", "#45b7bc", "#3d3d9f", "#cc79b6", "#c37f2f",];
     
+    //Long function to update the line chart when countries are clicked or selected. Written from scratch.
     var countryClick = function(countryIn, newCountryBoolean) {
         var countryIndex = [];
-        if(currentCountriesArray.indexOf(countryIn) === -1) {
+        if(currentCountriesArray.indexOf(countryIn) === -1) { //Only update line chart if country has not been clicked already.
             currentCountriesArray.unshift(countryIn);
             if(currentCountriesArray.length > 5) {
                 currentCountriesArray.length = 5;
@@ -705,6 +709,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
             return;   
         }
         
+        //Make the line chart appear to "pop up." Written from scratch.
         d3.select(".datamap").attr("style", "height: 350px;");
         d3.select("#basic_choropleth").attr("style", "height: 350px;");
         d3.select("#svg-pan-zoom-controls").attr("transform", "translate(1340 250) scale(0.75)");
@@ -713,31 +718,23 @@ d3.csv(datasetObject.name, function(error, dataset) {
         d3.select("#scaleYRadio").classed("hidden", false);
         d3.select("#dataGradient").attr("transform", "translate(40, 285)");
         d3.select("#annotationsRadio").attr("style", "margin-top: 275px;");
-        //zoomPanSetup(100,100);
         
-        //var dataIndex;
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
         }
         
-        //Set the country drop down
-        $('#dropDown').val(countryIn);
+        $('#dropDown').val(countryIn); //Set drop down to selection
+        
         //Create a new canvas svg element, with class of countryGraph1
         var canvas = d3.select("body")
             .append("svg")
             .attr("width", w)
             .attr("height", h)
             .attr("class", "countryGraph1")
-            .attr("style", "margin: 0 auto;"); //Shift the line chart
+            .attr("style", "margin: 0 auto;");
     
-
-        //Kind of mudane way of finding which data index is currently selected (based on the country name)
+        //Find the indices for each country that are on the line chart (based on the country name)
         dataset.forEach(function(d, i) {
-            /*
-            if(d["Country Code"] == currentCountriesArray[0]){
-                dataIndex = i;
-            }
-            */
             if(d["Country Code"] == currentCountriesArray[0]){
                 countryIndex[0] = i;
             }
@@ -756,10 +753,9 @@ d3.csv(datasetObject.name, function(error, dataset) {
             
         });
             
-        //Find min value from the dataset
-        //NOTE: change initiammindatasetyear to mindataset year if you want y axis to dynamically scale
-        var minValue = 10000000000;//datasetObject.initialGraphMin;
-        var maxValue = 0;
+        //Find min and max values for the line chart.
+        var minValue = 10000000000; //Put in large value as initial min reference.
+        var maxValue = 0; //Small values as initial max reference.
         
         var initialYear; 
         var finalYear;
@@ -796,22 +792,21 @@ d3.csv(datasetObject.name, function(error, dataset) {
             .domain([minValue - 0.01*minValue, maxValue])
             .range([h - padding, padding]); //Range is the size of the chart
 
-        //xAxis using year xScale
+        //xAxis using year xScale. Imported and modified.
         xAxis = d3.svg.axis()
             .scale(xScale)
             .orient("bottom")
-            //.ticks(5) //Creat less ticks if needed
             .tickFormat(d3.format("d")); //decimal ticks (rounded) 
         
-        //Append a g element containing xAxis
+        //Append a g element containing xAxis. Imported and modified.
         canvas.append("g")
-            .attr("class", "axis") //Assignign an axis class to the xAxis.
+            .attr("class", "axis")
             .attr("id", "xAxis")
             .attr("transform", "translate(0," + (h - padding) + ")")
             .call(xAxis); //Took our "g" group elements and put the xAxis on them. Note that we could put the xAxis code in.
 
 
-        //yAxis
+        //yAxis.
         var yAxis = d3.svg.axis()
             .scale(yScale)
             .orient("left")
@@ -820,13 +815,14 @@ d3.csv(datasetObject.name, function(error, dataset) {
                                     + (d/allDatasets[currentDataset].yDivision).toFixed(allDatasets[currentDataset].toFixed) 
                                     + allDatasets[currentDataset].ySuffix;});
     
-        //Append yAxis
+        //Append yAxis. Imported and modified.
         canvas.append("g")
             .attr("class", "axis")
             .attr("id", "yAxis")
             .attr("transform", "translate(" + padding + ",0)")
             .call(yAxis);
-
+        
+        //Create a line for each country in the array of countries that have been clicked. Written from scratch.
         for(var i = 0; i < currentCountriesArray.length; i++) {
             if(dataset[countryIndex[i]][minDatasetYear + ""] > 0 && dataset[countryIndex[i]][maxDatasetYear + ""] > 0){
                 slope = ((((dataset[countryIndex[i]][maxDatasetYear + ""] - dataset[countryIndex[i]][minDatasetYear + ""])
@@ -856,7 +852,6 @@ d3.csv(datasetObject.name, function(error, dataset) {
                     .attr("class", "slopeText")
                     .attr("fill", "black");
             }
-            
             canvas.append("rect")
                 .attr("x", 120 + 110*i)
                 .attr("y", 25)
@@ -884,8 +879,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
     } //countryClick()
     
     
-    
-    //X button for graphs
+    //X button for graphs. Written from scratch. 
     var exitButton = d3.select("#exitGraph");
     exitButton.on("click", function(){
         $('#dropDown').val("All");
@@ -904,7 +898,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
     });
     
     
-    //Clear button for graphs
+    //Clear button for graphs. Written from scratch.
     var exitButton = d3.select("#clearGraph");
     exitButton.on("click", function(){
         currentCountriesArray = [];
@@ -915,7 +909,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
     });
     
     
-    //Radio for scale graph:
+    //Radio for scale graph. Written from scratch.
     $('#scaleYRadio input').change(function () {
         if($(this).val() === "yes"){
             yScaleBoolean = true;
@@ -941,9 +935,10 @@ d3.csv(datasetObject.name, function(error, dataset) {
         }
     });
     
+    //Create a popup annotation. Imported and heavily modifed.
     var createPopup = function(textInput, tooltipClass, width, xLocation, yLocation, xPoint, yPoint) {
         
-        //Offset so that "Page Ruler" chrome extension can give x and y coordinates
+        //Offset so that "Page Ruler" chrome extension can give x and y coordinates (to speed up hard-coding of x and y parameters).
         xLocation -= 21;
         yLocation -= 24;
         xPoint -= 21;
@@ -984,110 +979,98 @@ d3.csv(datasetObject.name, function(error, dataset) {
         d3.selectAll(tooltipClass).remove();  
     }
     
+    //Add annotations when relevant. Written from scratch.
+    var checkForPopups = function() {
 
-var checkForPopups = function() {
-    
-    if(annotationsBoolean) { 
-            //Rwanda
-        if(maxDatasetYear >= 1990 && maxDatasetYear <= 1994) {
-            removePopup(".tooltip1");  
-            createPopup("Rwanda Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
-        }
-        else {
-            removePopup(".tooltip1");   
-        }
+        if(annotationsBoolean) { 
+                //Rwanda
+            if(maxDatasetYear >= 1990 && maxDatasetYear <= 1994) {
+                removePopup(".tooltip1");  
+                createPopup("Rwanda Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
+            }
+            else {
+                removePopup(".tooltip1");   
+            }
 
-        //Soviet union falls
-        if(maxDatasetYear >= 1986 && maxDatasetYear <= 1996) {
-            removePopup(".tooltip2");  
-            createPopup("Fall of the Soviet Union: 1985-91", "tooltip2", 90, 1300, 245, 1204, 126);     
-        }
-        else {
-            removePopup(".tooltip2");   
-        }
+            //Soviet union falls
+            if(maxDatasetYear >= 1986 && maxDatasetYear <= 1996) {
+                removePopup(".tooltip2");  
+                createPopup("Fall of the Soviet Union: 1985-91", "tooltip2", 90, 1300, 245, 1204, 126);     
+            }
+            else {
+                removePopup(".tooltip2");   
+            }
 
-        //Bosnian Civil War
-        if(maxDatasetYear >= 1992 && maxDatasetYear <= 1995) {
-            removePopup(".tooltip3");  
-            createPopup("Bosnian Civil War: 1992-95", "tooltip3", 90, 560, 150, 789, 185);     
-        }
-        else {
-            removePopup(".tooltip3");   
-        }
+            //Bosnian Civil War
+            if(maxDatasetYear >= 1992 && maxDatasetYear <= 1995) {
+                removePopup(".tooltip3");  
+                createPopup("Bosnian Civil War: 1992-95", "tooltip3", 90, 560, 150, 789, 185);     
+            }
+            else {
+                removePopup(".tooltip3");   
+            }
 
-        //Spread of aids in Africa 1
-        if(maxDatasetYear >= 1989 && maxDatasetYear <= 1994) {
-            removePopup(".tooltip4");  
-            createPopup("Spread of Aids", "tooltip4", 90, 649, 413, 825, 410);     
-        }
-        else {
-            removePopup(".tooltip4");   
-        }
+            //Spread of aids in Africa 1
+            if(maxDatasetYear >= 1989 && maxDatasetYear <= 1994) {
+                removePopup(".tooltip4");  
+                createPopup("Spread of Aids", "tooltip4", 90, 649, 413, 825, 410);     
+            }
+            else {
+                removePopup(".tooltip4");   
+            }
 
-        //Spread of aids in Africa 1
-        if(maxDatasetYear >= 1995 && maxDatasetYear <= 2005) {
-            removePopup(".tooltip5");  
-            createPopup("Spread of Aids", "tooltip5", 90, 649, 413, 805, 454);     
-        }
-        else {
-            removePopup(".tooltip5");   
-        }
+            //Spread of aids in Africa 1
+            if(maxDatasetYear >= 1995 && maxDatasetYear <= 2005) {
+                removePopup(".tooltip5");  
+                createPopup("Spread of Aids", "tooltip5", 90, 649, 413, 805, 454);     
+            }
+            else {
+                removePopup(".tooltip5");   
+            }
 
-        //Khmer Rouge era: 1970-79
-        if(maxDatasetYear >= 1970 && maxDatasetYear <= 1979) {
-            removePopup(".tooltip6");  
-            createPopup("Khmer Rouge: 1970-79", "tooltip6", 90, 1005, 360, 1125, 309);     
-        }
-        else {
-            removePopup(".tooltip6");   
-        }
-
-
-        //Vietnam War
-        if(maxDatasetYear >= 1972 && maxDatasetYear <= 1975) {
-            removePopup(".tooltip7");  
-            createPopup("Vietnam War: 1975", "tooltip7", 90, 1221, 282, 1143, 305);     
-        }
-        else {
-            removePopup(".tooltip7");   
-        }
-
-        //Iraq War
-        if(maxDatasetYear >= 2003 && maxDatasetYear <= 2011) {
-            removePopup(".tooltip8");  
-            createPopup("Iraq War: 2003-2011", "tooltip8", 90, 961, 349, 893, 236);     
-        }
-        else {
-            removePopup(".tooltip8");   
-        }
-
-        //Iran / Iraq War
-        if(maxDatasetYear >= 1980 && maxDatasetYear <= 1985) {
-            removePopup(".tooltip9");  
-            createPopup("Iran/Iraq War: 1980-1988", "tooltip9", 90, 961, 349, 943, 236);     
-        }
-        else {
-            removePopup(".tooltip9");   
-        }
+            //Khmer Rouge era: 1970-79
+            if(maxDatasetYear >= 1970 && maxDatasetYear <= 1979) {
+                removePopup(".tooltip6");  
+                createPopup("Khmer Rouge: 1970-79", "tooltip6", 90, 1005, 360, 1125, 309);     
+            }
+            else {
+                removePopup(".tooltip6");   
+            }
 
 
-        /*
-        //Korea? Not sure about this one.
-        if(maxDatasetYear >= 1997 && maxDatasetYear <= 2004) {
-            removePopup(".tooltip6");  
-            createPopup("Kim Jong-Il Takes Office: 1997", "tooltip6", 90, 1250, 255, 1212, 202);     
+            //Vietnam War
+            if(maxDatasetYear >= 1972 && maxDatasetYear <= 1975) {
+                removePopup(".tooltip7");  
+                createPopup("Vietnam War: 1975", "tooltip7", 90, 1221, 282, 1143, 305);     
+            }
+            else {
+                removePopup(".tooltip7");   
+            }
+
+            //Iraq War
+            if(maxDatasetYear >= 2003 && maxDatasetYear <= 2011) {
+                removePopup(".tooltip8");  
+                createPopup("Iraq War: 2003-2011", "tooltip8", 90, 961, 349, 893, 236);     
+            }
+            else {
+                removePopup(".tooltip8");   
+            }
+
+            //Iran / Iraq War
+            if(maxDatasetYear >= 1980 && maxDatasetYear <= 1985) {
+                removePopup(".tooltip9");  
+                createPopup("Iran/Iraq War: 1980-1988", "tooltip9", 90, 961, 349, 943, 236);     
+            }
+            else {
+                removePopup(".tooltip9");   
+            }
         }
-        else {
-            removePopup(".tooltip6");   
-        }
-        */
-    }
-}
+    }//checkForPopups()
     
 
 }); //.csv
 } //switch data
-switchData(allDatasets[currentDataset]);
+switchData(allDatasets[currentDataset]); //Load initial dataset.
 
 </script>
     
