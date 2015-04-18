@@ -222,7 +222,7 @@
             <option value="1" id="dataDefault">GDP Per Capita</option>
             <option value="2" id="dataDefault">Unemployment Percent</option>
             <option value="3" id="dataDefault">Total Population</option>
-            <option value="4" id="dataDefault">Option 5 . . . . . . . . . . . . .</option>
+            <option value="4" id="dataDefault">Internet Users Per 100</option>
         </select>
         </div>
     </div>
@@ -325,6 +325,19 @@
         yDivision: 1000000,
         toFixed: 0,
     }
+    
+    var internetUsersDataset = {
+        name: "internetPer100.csv",
+        initialMinDatasetYear: 1990,
+        initialMaxDatasetYear: 2013,
+        colorMin: -30.0,
+        colorMax: 30.0,
+        yPrefix: "",
+        ySuffix: "/100",
+        yDivision: 1,
+        toFixed: 0,
+    }
+
 
     var allDatasets = [];
     var currentDataset = 0;
@@ -335,6 +348,7 @@
     allDatasets.push(gdpDataset);
     allDatasets.push(unemploymentDataset);
     allDatasets.push(populationDataset);
+    allDatasets.push(internetUsersDataset);
 
     var dataDropDown = d3.select("#dataDropDown");
     dataDropDown.on("change", menuChanged);
@@ -395,7 +409,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
     //Create the slider
     $("#slider").rangeSlider({
         bounds:{min: minDatasetYear, max: maxDatasetYear},
-        range: {min: 5, max: maxDatasetYear - minDatasetYear},
+        range: {min: 3, max: maxDatasetYear - minDatasetYear},
         defaultValues:{min: minDatasetYear, max: maxDatasetYear}
     });
     
