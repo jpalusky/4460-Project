@@ -212,7 +212,7 @@
     <script src="zoompan.js"></script>
     
     <div class="top-banner">
-        <a href="cs4460Project.html">World Map Data</a>
+        <a href="cs4460Project.html">World % Change Data</a>
         <!-- Dataset drop down -->
         <!--<div style="position: absolute; top:30px; z-index: 1;"> -->
         <div style="width: 280px; margin: auto; margin-top: -7px; ">
@@ -232,7 +232,8 @@
         Annotations:
         <input type="radio" name="radio" value="on" checked="checked">On</input>
         <input type="radio" name="radio" value="off">Off</input>
-        <p style="color: rgb(160, 160, 160);">Gray indicates insufficient data.</p>
+    <br>
+        <div style="display: inline-block; width: 12px; height: 12px; background: rgb(160, 160, 160); border-radius: 2px;"></div> <p style="display: inline-block;">Gray indicates insufficient data</p>
     </form>
     
     <div style="padding-top:35px;"></div>
@@ -283,7 +284,10 @@
         initialMaxDatasetYear: 2012,
         colorMin: -2.0,
         colorMax: 2.0,
-        initialGraphMin: 10000000,
+        yPrefix: "",
+        ySuffix: "y",
+        yDivision: 1,
+        toFixed: 1,
     }
 
     var gdpDataset = {
@@ -292,9 +296,10 @@
         initialMaxDatasetYear: 2013,
         colorMin: -15.0,
         colorMax: 15.0,
-        //colorMin: -1000.0,
-        //colorMax: 1000.0,
-        initialGraphMin: 10000000,
+        yPrefix: "$",
+        ySuffix: "k",
+        yDivision: 1000,
+        toFixed: 1,
     }
     
     var unemploymentDataset = {
@@ -303,9 +308,10 @@
         initialMaxDatasetYear: 2013,
         colorMin: 15.0,
         colorMax: -15.0,
-        //colorMin: 1.0,
-        //colorMax: -1.0,
-        initialGraphMin: 10000000,
+        yPrefix: "",
+        ySuffix: "%",
+        yDivision: 1,
+        toFixed: 1,
     }
 
     var populationDataset = {
@@ -314,9 +320,10 @@
         initialMaxDatasetYear: 2013,
         colorMin: -5.0,
         colorMax: 5.0,
-        //colorMin: -1000000.0,
-        //colorMax: 4000000.0,
-        initialGraphMin: 1000000000,
+        yPrefix: "",
+        ySuffix: "mil",
+        yDivision: 1000000,
+        toFixed: 0,
     }
 
     var allDatasets = [];
@@ -343,6 +350,7 @@
         d3.select("#scaleYRadio").classed("hidden", true);
         d3.select("#dataGradient").attr("transform", "translate(40, 530)");
         d3.selectAll(".countryGraph1").remove();
+        d3.select("#annotationsRadio").attr("style", "margin-top: 515px;");
         
         currentDataset = d3.event.target.value;
         console.log(currentDataset);
@@ -391,6 +399,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
         defaultValues:{min: minDatasetYear, max: maxDatasetYear}
     });
     
+    $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1); //Trying to fix the bad data issue
     $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
     
     //Change variables on slider change
@@ -667,7 +676,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
     
     //Function that runs when you click a country
     var currentCountriesArray = [];
-    var lineColors = ["#dd5454", "#3fa23f", "#3d3dba", "#c99e4e", "#3e3636"];
+    var lineColors = ["#3e3636", "#45b7bc", "#3d3d9f", "#cc79b6", "#c37f2f",];
     
     var countryClick = function(countryIn, newCountryBoolean) {
         var countryIndex = [];
@@ -791,8 +800,12 @@ d3.csv(datasetObject.name, function(error, dataset) {
         //yAxis
         var yAxis = d3.svg.axis()
             .scale(yScale)
-            .orient("left"); //IMPORTANT: left orientation for the left axis
-
+            .orient("left")
+            .ticks(10)
+            .tickFormat(function(d) {return allDatasets[currentDataset].yPrefix 
+                                    + (d/allDatasets[currentDataset].yDivision).toFixed(allDatasets[currentDataset].toFixed) 
+                                    + allDatasets[currentDataset].ySuffix;});
+    
         //Append yAxis
         canvas.append("g")
             .attr("class", "axis")
@@ -801,9 +814,13 @@ d3.csv(datasetObject.name, function(error, dataset) {
             .call(yAxis);
 
         for(var i = 0; i < currentCountriesArray.length; i++) {
-            slope = ((((dataset[countryIndex[i]][maxDatasetYear + ""] - dataset[countryIndex[i]][minDatasetYear + ""])
-                       /dataset[countryIndex[i]][maxDatasetYear + ""])/(maxDatasetYear-minDatasetYear))*100).toFixed(2);  
-            
+            if(dataset[countryIndex[i]][minDatasetYear + ""] > 0 && dataset[countryIndex[i]][maxDatasetYear + ""] > 0){
+                slope = ((((dataset[countryIndex[i]][maxDatasetYear + ""] - dataset[countryIndex[i]][minDatasetYear + ""])
+                           /dataset[countryIndex[i]][maxDatasetYear + ""])/(maxDatasetYear-minDatasetYear))*100).toFixed(2);
+            } else {
+                slope = undefined;    
+            }
+
             if (!isNaN(slope) && slope !== 0) {
                 canvas.append("text")
                     .attr("y", 20)//yScale(dataset[countryIndex[i]][maxDatasetYear + ""]))
@@ -888,10 +905,12 @@ d3.csv(datasetObject.name, function(error, dataset) {
     $('#scaleYRadio input').change(function () {
         if($(this).val() === "yes"){
             yScaleBoolean = true;
+            $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1);
             $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
         }
         else{
             yScaleBoolean = false;
+            $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1);
             $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
         }
     });
@@ -1055,7 +1074,6 @@ var checkForPopups = function() {
 }); //.csv
 } //switch data
 switchData(allDatasets[currentDataset]);
-$("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear); //Trying to fix the bad data issue
 
 </script>
     
