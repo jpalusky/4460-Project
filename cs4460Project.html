@@ -9,7 +9,6 @@
         /*CSS STYLES*/
         /*CSS for play button imported and motified. Other CSS written from scratch*/
         
-        
         .play_border {
             margin-left:15px;
             border: 2px solid rgba(0,0,0,0.7);
@@ -76,7 +75,7 @@
             display: block;
             color: #ffffff;
             font-size: 25px;
-            height:60px;
+            height:35px;
             width: 100%;
             padding:2px;
             z-index: 5;
@@ -89,6 +88,7 @@
             text-decoration:none;
             letter-spacing: 4px;
             font-weight: bold;
+            margin-right: 280px;
         }
         
         /* Path and line styling to make the axis look nicer */
@@ -149,9 +149,29 @@
         
         #exitGraph {
             float: left;
-            margin-top: 75px;
-            margin-left: -30px;
+            margin-top: 71px;
+            margin-left: 1325px;
             position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            line-height: 18px;
+            color: #000000;
+            text-shadow: 0 1px 0 #ffffff;
+            opacity: 0.6;
+            filter: alpha(opacity=20);
+            text-decoration: none;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            border:none;
+            background-color:#FFFFFF;
+        }
+            
+        #exitGraph:hover {
+            color: #000000;
+            text-decoration: none;
+            opacity: 0.8;
+            filter: alpha(opacity=40);
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
         
         #exitGraph.hidden {
@@ -160,9 +180,29 @@
         
         #clearGraph {
             float: left;
-            margin-top: 75px;
-            margin-left: 0px;
+            margin-top: 71px;
+            margin-left: -15px;
             position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 18px;
+            color: #000000;
+            text-shadow: 0 1px 0 #ffffff;
+            opacity: 0.8;
+            filter: alpha(opacity=20);
+            text-decoration: none;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            border:none;
+            background-color:#FFFFFF;
+        }
+            
+        #clearGraph:hover {
+            color: #000000;
+            text-decoration: none;
+            opacity: 0.9;
+            filter: alpha(opacity=40);
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         }
         
         #clearGraph.hidden {
@@ -176,7 +216,7 @@
             position: absolute;
             font-family: Century Gothic, sans-serif;
             font-size: 14px;
-            width: 250px;
+            width: 260px;
         }
         
         #scaleYRadio.hidden {
@@ -186,7 +226,7 @@
         #annotationsRadio {
             position: absolute;
             z-index: 6;
-            margin-top: 515px;
+            margin-top: 495px;
             margin-left: 60px;
             font-family: Century Gothic, sans-serif;
             font-size: 14px;
@@ -198,7 +238,7 @@
  
     </style>
     
-    <!-- Stylesheets and javascript for JQRangeSlider, used to select years. CSS heavily modified. -->
+    <!-- Stylesheets and javascript for JQRangeSlider, used to select years. Imported and used as is. CSS heavily modified. -->
     <link rel="stylesheet" id="themeCSS" href="iThing.css"> 
 	<link rel="stylesheet" href="style.css">
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
@@ -210,7 +250,7 @@
 
 <body>
     <!-- D3, topojson (for datamaps), datamaps, and zoompan.js (for zooming). -->
-    <!-- All used as is, minor modifications to datamaps.world.min.js -->
+    <!-- Imported and used as is, minor modifications to datamaps.world.min.js -->
     <script type="text/javascript" src="d3.v3.js"></script>
     <script type="text/javascript" src="topojson.js"></script>
     <script src="datamaps.world.min.js"></script>
@@ -218,18 +258,18 @@
     
     <!-- Top banner. Written from scratch. -->
     <div class="top-banner">
-        <a href="cs4460Project.html">World % Change Data</a>
         <!-- Dataset drop down. Written from scratch. -->
-        <div style="width: 280px; margin: auto; margin-top: -7px; ">
-        <p style="float: left; margin-left: 20px; font-size: 15px; font-family: Century Gothic, sans-serif;">Dataset:</p>
-        <select name="datsetList" id="dataDropDown">
-            <option value="0" id="dataDefault">Life Expectancy </option>
-            <option value="1" id="dataDefault">GDP Per Capita</option>
-            <option value="2" id="dataDefault">Unemployment Percent</option>
-            <option value="3" id="dataDefault">Total Population</option>
-            <option value="4" id="dataDefault">Internet Users Per 100</option>
-        </select>
+        <div style="width: 280px; margin: auto; margin-top: -7px; float: left;">
+            <p style="float: left; margin-left: 20px; font-size: 15px; font-family: Century Gothic, sans-serif;">Dataset:</p>
+            <select name="datsetList" id="dataDropDown">
+                <option value="0" id="dataDefault">Life Expectancy </option>
+                <option value="1" id="dataDefault">GDP Per Capita</option>
+                <option value="2" id="dataDefault">Unemployment Percent</option>
+                <option value="3" id="dataDefault">Total Population</option>
+                <option value="4" id="dataDefault">Internet Users Per 100</option>
+            </select>
         </div>
+        <a href="cs4460Project.html">World Change Data</a>
     </div>
     
     <!-- Radio to turn annotations on or off. -->
@@ -242,7 +282,7 @@
         <p style="display: inline-block;">Gray indicates insufficient data</p>
     </form>
     
-    <div style="padding-top:35px;"></div>
+    <div style="padding-top:15px;"></div>
 
     <!-- Div for cholopleth map -->
     <div id="basic_choropleth"></div>
@@ -257,12 +297,12 @@
     
     <!-- Clear button. -->
     <button type="button" id="clearGraph" class="hidden">
-        Clear
+        CLEAR
     </button>
     
     <!-- Exit button -->
     <button type="button" id="exitGraph" class="hidden">
-        X
+        ×
     </button>
     
     <!-- Radio scale Y -->
@@ -421,10 +461,6 @@ d3.csv(datasetObject.name, function(error, dataset) {
         defaultValues:{min: minDatasetYear, max: maxDatasetYear}
     });
     
-    //Update slider to fix a datamaps loading error
-    $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1);
-    $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
-    
     //Update map, popups, and chart when slider is changing. Written from scratch.
     $("#slider").on("valuesChanging", function(e, data){
         //Stop animation (if button has been pressed)
@@ -534,6 +570,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
         var mapsvg = document.querySelector(".datamap");
         var panZoom = svgPanZoom(mapsvg, {
             mouseWheelZoomEnabled: false,
+            dblClickZoomEnabled: false,
             zoomEnabled: true,
             controlIconsEnabled: true,
             fit: true,
@@ -699,8 +736,14 @@ d3.csv(datasetObject.name, function(error, dataset) {
     var countryClick = function(countryIn, newCountryBoolean) {
         var countryIndex = [];
         if(currentCountriesArray.indexOf(countryIn) === -1) { //Only update line chart if country has not been clicked already.
-            currentCountriesArray.unshift(countryIn);
-            if(currentCountriesArray.length > 5) {
+            if(currentCountriesArray.length < 5){
+                currentCountriesArray.push(countryIn);   
+            }
+            else {
+                var lineColorReturn = lineColors.pop();
+                lineColors.unshift(lineColorReturn);
+                console.log(lineColors);
+                currentCountriesArray.unshift(countryIn);   
                 currentCountriesArray.length = 5;
             }
         }
@@ -717,7 +760,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
         d3.select("#clearGraph").classed("hidden", false);
         d3.select("#scaleYRadio").classed("hidden", false);
         d3.select("#dataGradient").attr("transform", "translate(40, 285)");
-        d3.select("#annotationsRadio").attr("style", "margin-top: 275px;");
+        d3.select("#annotationsRadio").attr("style", "margin-top: 255px;");
         
         if(newCountryBoolean == true) {
             d3.selectAll(".countryGraph1").remove(); //If true is passed in, remove the graph (class countryGraph1)
@@ -890,7 +933,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
         d3.select("#clearGraph").classed("hidden", true);
         d3.select("#scaleYRadio").classed("hidden", true);
         d3.select("#dataGradient").attr("transform", "translate(40, 530)");
-        d3.select("#annotationsRadio").attr("style", "margin-top: 515px;");
+        d3.select("#annotationsRadio").attr("style", "margin-top: 495px;");
         
         d3.select(".countryGraph1").remove();
         
@@ -983,10 +1026,10 @@ d3.csv(datasetObject.name, function(error, dataset) {
     var checkForPopups = function() {
 
         if(annotationsBoolean) { 
-                //Rwanda
+                //Rwandan
             if(maxDatasetYear >= 1990 && maxDatasetYear <= 1994) {
                 removePopup(".tooltip1");  
-                createPopup("Rwanda Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
+                createPopup("Rwandan Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
             }
             else {
                 removePopup(".tooltip1");   
@@ -1067,7 +1110,11 @@ d3.csv(datasetObject.name, function(error, dataset) {
         }
     }//checkForPopups()
     
-
+    //Update slider to fix a datamaps loading error
+    $("#slider").rangeSlider("values", minDatasetYear+3, maxDatasetYear-3);
+    $("#slider").rangeSlider("values", minDatasetYear+1, maxDatasetYear-1);
+    $("#slider").rangeSlider("values", minDatasetYear, maxDatasetYear);
+    
 }); //.csv
 } //switch data
 switchData(allDatasets[currentDataset]); //Load initial dataset.
