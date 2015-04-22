@@ -243,7 +243,7 @@
 	<link rel="stylesheet" href="style.css">
 	<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-	<script src="jquery.mousewheel.min.js"></script>
+	<!-- <script src="jquery.mousewheel.min.js"></script> -->
 	<script src="../jQAllRangeSliders-min.js"></script>
     
 </head>
@@ -387,7 +387,7 @@
 
     //Global variables to hold datasets
     var allDatasets = [];
-    var currentDataset = 0;
+    var currentDataset = "0";
     
     //Checking status of radio buttons
     var yScaleBoolean = false;
@@ -1027,7 +1027,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
 
         if(annotationsBoolean) { 
                 //Rwandan
-            if(maxDatasetYear >= 1990 && maxDatasetYear <= 1994) {
+            if((maxDatasetYear >= 1990 && maxDatasetYear <= 1994) 
+               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2" || currentDataset === "3")) {
                 removePopup(".tooltip1");  
                 createPopup("Rwandan Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
             }
@@ -1036,7 +1037,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Soviet union falls
-            if(maxDatasetYear >= 1986 && maxDatasetYear <= 1996) {
+            if((maxDatasetYear >= 1986 && maxDatasetYear <= 1996)
+               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2" || currentDataset === "3")) {
                 removePopup(".tooltip2");  
                 createPopup("Fall of the Soviet Union: 1985-91", "tooltip2", 90, 1300, 245, 1204, 126);     
             }
@@ -1045,7 +1047,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Bosnian Civil War
-            if(maxDatasetYear >= 1992 && maxDatasetYear <= 1995) {
+            if((maxDatasetYear >= 1992 && maxDatasetYear <= 1995)
+               && (currentDataset === "0" || currentDataset === "3")) {
                 removePopup(".tooltip3");  
                 createPopup("Bosnian Civil War: 1992-95", "tooltip3", 90, 560, 150, 789, 185);     
             }
@@ -1054,7 +1057,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Spread of aids in Africa 1
-            if(maxDatasetYear >= 1989 && maxDatasetYear <= 1994) {
+            if((maxDatasetYear >= 1989 && maxDatasetYear <= 1994)
+               && (currentDataset === "0" || currentDataset === "3")) {
                 removePopup(".tooltip4");  
                 createPopup("Spread of Aids", "tooltip4", 90, 649, 413, 825, 410);     
             }
@@ -1063,7 +1067,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Spread of aids in Africa 1
-            if(maxDatasetYear >= 1995 && maxDatasetYear <= 2005) {
+            if((maxDatasetYear >= 1995 && maxDatasetYear <= 2005)
+               && (currentDataset === "0" || currentDataset === "3")){
                 removePopup(".tooltip5");  
                 createPopup("Spread of Aids", "tooltip5", 90, 649, 413, 805, 454);     
             }
@@ -1072,7 +1077,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Khmer Rouge era: 1970-79
-            if(maxDatasetYear >= 1970 && maxDatasetYear <= 1979) {
+            if((maxDatasetYear >= 1970 && maxDatasetYear <= 1979)
+               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "3")){
                 removePopup(".tooltip6");  
                 createPopup("Khmer Rouge: 1970-79", "tooltip6", 90, 1005, 360, 1125, 309);     
             }
@@ -1082,7 +1088,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
 
 
             //Vietnam War
-            if(maxDatasetYear >= 1972 && maxDatasetYear <= 1975) {
+            if((maxDatasetYear >= 1972 && maxDatasetYear <= 1975) 
+               && (currentDataset === "0")){
                 removePopup(".tooltip7");  
                 createPopup("Vietnam War: 1975", "tooltip7", 90, 1221, 282, 1143, 305);     
             }
@@ -1091,7 +1098,8 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Iraq War
-            if(maxDatasetYear >= 2003 && maxDatasetYear <= 2011) {
+            if((maxDatasetYear >= 2003 && maxDatasetYear <= 2011)
+               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2")){
                 removePopup(".tooltip8");  
                 createPopup("Iraq War: 2003-2011", "tooltip8", 90, 961, 349, 893, 236);     
             }
@@ -1100,12 +1108,43 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
 
             //Iran / Iraq War
-            if(maxDatasetYear >= 1980 && maxDatasetYear <= 1985) {
+            if((maxDatasetYear >= 1980 && maxDatasetYear <= 1985)
+               && (currentDataset === "0")){
                 removePopup(".tooltip9");  
                 createPopup("Iran/Iraq War: 1980-1988", "tooltip9", 90, 961, 349, 943, 236);     
             }
             else {
                 removePopup(".tooltip9");   
+            }
+        
+            //Algeria industrialization and socialism
+            if((maxDatasetYear >= 1975 && maxDatasetYear <= 1985) 
+               && ( currentDataset == "0" || currentDataset == "1")) {
+                removePopup(".tooltip10");  
+                createPopup("Socialist Industrial boom: 1975-1985", "tooltip10", 90, 527, 209, 727, 251);     
+            }
+            else {
+                removePopup(".tooltip10");   
+            }
+
+            //dotCom burst: 2000 Stock Market Crash
+            if((maxDatasetYear >= 1998 && maxDatasetYear <= 2004) 
+               && ( currentDataset == "1" || currentDataset == "2")) {
+                removePopup(".tooltip11");  
+                createPopup("2000 Stock Market Crash: DotCom Burst", "tooltip11", 120, 510, 215, 400, 205);     
+            }
+            else {
+                removePopup(".tooltip11");   
+            }
+        
+            //2008 Stock Crash
+            if((maxDatasetYear >= 2008 && maxDatasetYear <= 2011)
+               && (currentDataset === "2")) {
+                removePopup(".tooltip12");  
+                createPopup("Stock Market Crash: 2008", "tooltip12", 90, 200, 320, 340, 205);     
+            }
+            else {
+                removePopup(".tooltip12");   
             }
         }
     }//checkForPopups()
