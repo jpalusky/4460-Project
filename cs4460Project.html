@@ -1030,7 +1030,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
             if((maxDatasetYear >= 1990 && maxDatasetYear <= 1994) 
                && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2" || currentDataset === "3")) {
                 removePopup(".tooltip1");  
-                createPopup("Rwandan Civil War: 1990-94", "tooltip1", 90, 920, 450, 836, 365);     
+                createPopup("Rwandan Civil War: 1990-94", "tooltip1", 90, 920, 460, 836, 365);     
             }
             else {
                 removePopup(".tooltip1");   
@@ -1080,7 +1080,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
             if((maxDatasetYear >= 1970 && maxDatasetYear <= 1979)
                && (currentDataset === "0" || currentDataset === "1" || currentDataset === "3")){
                 removePopup(".tooltip6");  
-                createPopup("Khmer Rouge: 1970-79", "tooltip6", 90, 1005, 360, 1125, 309);     
+                createPopup("Khmer Rouge: 1970-79", "tooltip6", 90, 1025, 410, 1125, 309);     
             }
             else {
                 removePopup(".tooltip6");   
@@ -1145,6 +1145,16 @@ d3.csv(datasetObject.name, function(error, dataset) {
             }
             else {
                 removePopup(".tooltip12");   
+            }
+            
+            //afghan population boom
+            if((maxDatasetYear >= 1979 && maxDatasetYear <= 1989) 
+               && (currentDataset == "3")) {
+                removePopup(".tooltip13");  
+                createPopup("Soviet-Afghan War: 1979-1989", "tooltip13", 120, 930, 340, 970, 230);     
+            }
+            else {
+                removePopup(".tooltip13");   
             }
         }
     }//checkForPopups()
