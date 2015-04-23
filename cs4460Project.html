@@ -266,7 +266,7 @@
                 <option value="1" id="dataDefault">GDP Per Capita</option>
                 <option value="2" id="dataDefault">Unemployment Percent</option>
                 <option value="3" id="dataDefault">Total Population</option>
-                <option value="4" id="dataDefault">Internet Users Per 100</option>
+                <option value="4" id="dataDefault">Internet Users Percent</option>
             </select>
         </div>
         <a href="cs4460Project.html">World Change Data</a>
@@ -380,9 +380,9 @@
         colorMin: -30.0,
         colorMax: 30.0,
         yPrefix: "",
-        ySuffix: "/100",
+        ySuffix: "%",
         yDivision: 1,
-        toFixed: 0,
+        toFixed: 2,
     }
 
     //Global variables to hold datasets
@@ -857,6 +857,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
             .tickFormat(function(d) {return allDatasets[currentDataset].yPrefix 
                                     + (d/allDatasets[currentDataset].yDivision).toFixed(allDatasets[currentDataset].toFixed) 
                                     + allDatasets[currentDataset].ySuffix;});
+            //.tickFormat(d3.format(".1f"));
     
         //Append yAxis. Imported and modified.
         canvas.append("g")
@@ -1131,7 +1132,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
             if((maxDatasetYear >= 1998 && maxDatasetYear <= 2004) 
                && ( currentDataset == "1" || currentDataset == "2")) {
                 removePopup(".tooltip11");  
-                createPopup("2000 Stock Market Crash: DotCom Burst", "tooltip11", 120, 510, 215, 400, 205);     
+                createPopup("2000 Stock Market Crash: DotCom Burst", "tooltip11", 120, 200, 320, 340, 205);     
             }
             else {
                 removePopup(".tooltip11");   
