@@ -1029,7 +1029,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
         if(annotationsBoolean) { 
                 //Rwandan
             if((maxDatasetYear >= 1990 && maxDatasetYear <= 1994) 
-               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2" || currentDataset === "3")) {
+               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "3")) {
                 removePopup(".tooltip1");  
                 createPopup("Rwandan Civil War: 1990-94", "tooltip1", 90, 920, 460, 836, 365);     
             }
@@ -1059,7 +1059,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
 
             //Spread of aids in Africa 1
             if((maxDatasetYear >= 1989 && maxDatasetYear <= 1994)
-               && (currentDataset === "0" || currentDataset === "3")) {
+               && (currentDataset === "0")) {
                 removePopup(".tooltip4");  
                 createPopup("Spread of Aids", "tooltip4", 90, 649, 413, 825, 410);     
             }
@@ -1100,7 +1100,7 @@ d3.csv(datasetObject.name, function(error, dataset) {
 
             //Iraq War
             if((maxDatasetYear >= 2003 && maxDatasetYear <= 2011)
-               && (currentDataset === "0" || currentDataset === "1" || currentDataset === "2")){
+               && (currentDataset === "0" || currentDataset === "2")){
                 removePopup(".tooltip8");  
                 createPopup("Iraq War: 2003-2011", "tooltip8", 90, 961, 349, 893, 236);     
             }
